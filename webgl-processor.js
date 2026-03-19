@@ -340,7 +340,8 @@ const BLUR_FRAGMENT_SHADER = `
         
         for (int i = -4; i <= 4; i++) {
             float fi = float(i);
-            float weight = weights[abs(i)];
+            int idx = i < 0 ? -i : i;
+            float weight = weights[idx];
             vec2 offset = u_direction * fi * u_radius * texelSize;
             color += texture2D(u_sourceTexture, v_texCoord + offset) * weight;
             total += weight;
