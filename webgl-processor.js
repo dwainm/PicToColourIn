@@ -470,8 +470,8 @@ const DOG_FRAGMENT_SHADER = `
     precision mediump float;
     varying vec2 v_texCoord;
     
-    uniform sampler2D u_sourceTexture;   // Narrow blur (sharper)
-    uniform sampler2D u_blurTexture;     // Wide blur (softer)
+    uniform sampler2D u_sourceTexture;
+    uniform sampler2D u_blurTexture;
     uniform vec2 u_resolution;
     uniform float u_edgeIntensity;
     uniform float u_threshold;
@@ -481,60 +481,13 @@ const DOG_FRAGMENT_SHADER = `
     }
     
     void main() {
-        vec2 texelSize = 1.0 / u_resolution;
-        
-        // Sample center pixel DoG value
-        float centerNarrow = grayscale(texture2D(u_sourceTexture, v_texCoord));
-        float centerWide = grayscale(texture2D(u_blurTexture, v_texCoord));
-        float centerEdge = abs(centerNarrow - centerWide) * u_edgeIntensity * 5.0;
-        
-        // Sample neighbors for gradient direction (Sobel on DoG)
-        float rightNarrow = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2(1.0, 0.0) * texelSize));
-        float rightWide = grayscale(texture2D(u_blurTexture, v_texCoord + vec2(1.0, 0.0) * texelSize));
-        float gx = abs(rightNarrow - rightWide) - centerEdge;
-        
-        float downNarrow = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2(0.0, 1.0) * texelSize));
-        float downWide = grayscale(texture2D(u_blurTexture, v_texCoord + vec2(0.0, 1.0) * texelSize));
-        float gy = abs(downNarrow - downWide) - centerEdge;
-        
-        // Gradient magnitude
-        float g = sqrt(gx * gx + gy * gy);
-        
-        // Normalize gradient direction
-        float dx = gx / (g + 0.0001);
-        float dy = gy / (g + 0.0001);
-        
-        // Sample in gradient direction (non-maximum suppression)
-        vec2 pos1 = v_texCoord + vec2(dx, dy) * texelSize;
-        vec2 pos2 = v_texCoord - vec2(dx, dy) * texelSize;
-        
-        float val1 = abs(grayscale(texture2D(u_sourceTexture, pos1)) - grayscale(texture2D(u_blurTexture, pos1))) * u_edgeIntensity * 5.0;
-        float val2 = abs(grayscale(texture2D(u_sourceTexture, pos2)) - grayscale(texture2D(u_blurTexture, pos2))) * u_edgeIntensity * 5.0;
-        
-        // Keep only if local maximum
-        float finalEdge = centerEdge;
-        if (centerEdge < val1 || centerEdge < val2) {
-            finalEdge = 0.0; // Suppress non-maximum
-        }
-        
-        // Soft threshold
-        float thresholdLow = u_threshold * 0.6;
-        float thresholdHigh = u_threshold * 1.2;
-        
-        float result;
-        if (finalEdge > thresholdHigh) {
-            result = 0.0;
-        } else if (finalEdge < thresholdLow) {
-            result = 1.0;
-        } else {
-            float t = (finalEdge - thresholdLow) / (thresholdHigh - thresholdLow);
-            result = 1.0 - t;
-        }
-        
+        float narrow = grayscale(texture2D(u_sourceTexture, v_texCoord));
+        float wide = grayscale(texture2D(u_blurTexture, v_texCoord));
+        float edge = abs(narrow - wide) * u_edgeIntensity * 5.0;
+        float result = edge > u_threshold ? 0.0 : 1.0;
         gl_FragColor = vec4(vec3(result), 1.0);
     }
 `;
-
 // Expose to window
 if (typeof window !== 'undefined') {
     window.WebGLProcessor = WebGLProcessor;
