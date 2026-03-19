@@ -23,7 +23,7 @@ export class AIColoringEvaluator {
     const base64Image = imageBuffer.toString('base64');
 
     const criteriaPrompts = {
-      standard: `Evaluate this image as a coloring book page. Score each criterion 1-10:
+      standard: `Evaluate this coloring book page image. Score each criterion 1-10:
 
 1. LINE_CLARITY: Are outlines crisp, continuous, and clear? (no gaps, no fuzziness)
 2. DETAIL_BALANCE: Is there a good mix of simple and detailed areas? (not too cluttered, not too empty)
@@ -31,7 +31,8 @@ export class AIColoringEvaluator {
 4. COLORABILITY: Are regions well-defined and closed for coloring? (no open lines that bleed)
 5. PRINT_QUALITY: Would this look good printed on standard paper?
 
-Respond ONLY as JSON:
+IMPORTANT: Respond ONLY with valid JSON. No markdown, no explanations outside JSON, no code blocks.
+
 {
   "LINE_CLARITY": {"score": 0, "reason": "brief explanation"},
   "DETAIL_BALANCE": {"score": 0, "reason": "brief explanation"},
@@ -50,7 +51,8 @@ Respond ONLY as JSON:
 4. COMPLEXITY: Is this appropriate for the target age (assume 6-10 years)?
 5. ARTIFACTS: Any stray marks, noise, or processing errors?
 
-JSON response only:
+IMPORTANT: Respond ONLY with valid JSON. No markdown, no explanations outside JSON, no code blocks.
+
 {
   "LINE_WEIGHT": {"score": 0, "reason": ""},
   "COMPOSITION": {"score": 0, "reason": ""},

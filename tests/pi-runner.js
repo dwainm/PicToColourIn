@@ -18,11 +18,11 @@ const PORT = 8888;
 
 // Parameter variants to test
 const VARIANTS = [
-  { blurRadius: 0.5, edgeIntensity: 1.0, threshold: 0.2, label: 'sharp' },
-  { blurRadius: 2.0, edgeIntensity: 0.8, threshold: 0.25, label: 'balanced' },
-  { blurRadius: 4.0, edgeIntensity: 0.6, threshold: 0.3, label: 'smooth' },
-  { blurRadius: 1.0, edgeIntensity: 1.2, threshold: 0.18, label: 'crisp' },
-  { blurRadius: 3.0, edgeIntensity: 0.9, threshold: 0.22, label: 'soft' },
+  { blurRadius: 0.5, edgeIntensity: 1.0, threshold: 0.2, invert: true, label: 'sharp' },
+  { blurRadius: 2.0, edgeIntensity: 0.8, threshold: 0.25, invert: true, label: 'balanced' },
+  { blurRadius: 4.0, edgeIntensity: 0.6, threshold: 0.3, invert: true, label: 'smooth' },
+  { blurRadius: 1.0, edgeIntensity: 1.2, threshold: 0.18, invert: true, label: 'crisp' },
+  { blurRadius: 3.0, edgeIntensity: 0.9, threshold: 0.22, invert: true, label: 'soft' },
 ];
 
 async function startServer() {
