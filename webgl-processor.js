@@ -535,3 +535,32 @@ const SMOOTH_FRAGMENT_SHADER = `
 if (typeof window !== 'undefined') {
     window.WebGLProcessor = WebGLProcessor;
 }
+
+// Morphological closing shader (dilate then erode)
+// Connects broken line segments for better colorability
+const CLOSE_FRAGMENT_SHADER = `
+    precision mediump float;
+    varying vec2 v_texCoord;
+    
+    uniform sampler2D u_sourceTexture;
+    uniform vec2 u_resolution;
+    
+    void main() {
+        vec2 texelSize = 1.0 / u_resolution;
+        
+        // Sample cross pattern (dilation)
+        float c = texture2D(u_sourceTexture, v_texCoord).r;
+        float n = texture2D(u_sourceTexture, v_texCoord + vec2(0.0, -1.0) * texelSize).r;
+        float s = texture2D(u_sourceTexture, v_texCoord + vec2(0.0, 1.0) * texelSize).r;
+        float e = texture2D(u_sourceTexture, v_texCoord + vec2(1.0, 0.0) * texelSize).r;
+        float w = texture2D(u_sourceTexture, v_texCoord + vec2(-1.0, 0.0) * texelSize).r;
+        
+        // Dilation: if any neighbor is dark, become dark
+        float dilated = min(c, min(n, min(s, min(e, w))));
+        
+        // Slight erosion to thin lines back
+        float result = mix(dilated, c, 0.3);
+        
+        gl_FragColor = vec4(vec3(result), 1.0);
+    }
+`;
