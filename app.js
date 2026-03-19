@@ -10,7 +10,7 @@ class ColoringApp {
             blurRadius: 2.0,
             edgeIntensity: 0.5,
             threshold: 0.3,
-            invert: false
+            invert: true  // Always true for coloring pages (black lines on white)
         };
         
         this.init();
@@ -40,7 +40,6 @@ class ColoringApp {
         this.blurSlider = document.getElementById('blurSlider');
         this.edgeSlider = document.getElementById('edgeSlider');
         this.thresholdSlider = document.getElementById('thresholdSlider');
-        this.invertToggle = document.getElementById('invertToggle');
         
         // Value displays
         this.blurValue = document.getElementById('blurValue');
@@ -95,11 +94,6 @@ class ColoringApp {
             this.processingParams.threshold = parseFloat(e.target.value);
             this.thresholdValue.textContent = e.target.value;
             this.debouncedProcess();
-        });
-        
-        this.invertToggle.addEventListener('change', (e) => {
-            this.processingParams.invert = e.target.checked;
-            this.process();
         });
         
         // Action buttons
@@ -262,19 +256,18 @@ class ColoringApp {
         this.blurSlider.value = 2;
         this.edgeSlider.value = 0.5;
         this.thresholdSlider.value = 0.3;
-        this.invertToggle.checked = false;
         
         // Reset values display
         this.blurValue.textContent = '2';
         this.edgeValue.textContent = '0.5';
         this.thresholdValue.textContent = '0.3';
         
-        // Reset params
+        // Reset params (always inverted for coloring pages)
         this.processingParams = {
             blurRadius: 2.0,
             edgeIntensity: 0.5,
             threshold: 0.3,
-            invert: false
+            invert: true
         };
     }
 }
