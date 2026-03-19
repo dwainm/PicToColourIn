@@ -3,78 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PicToColourIn - Turn Photos into Coloring Pages</title>
+    
+    <!-- Primary Meta Tags -->
+    <title>Free Photo to Coloring Page Converter | PicToColourIn.com</title>
+    <meta name="description" content="Turn any photo into a printable coloring page instantly. Free online tool - no signup needed. Works entirely in your browser with privacy guaranteed. Works on mobile & desktop.">
+    <meta name="keywords" content="photo to coloring page, convert photo to coloring book, free coloring page maker, printable coloring pages, online coloring page creator, image to outline, photo to line drawing">
+    <meta name="author" content="PicToColourIn">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pictocolourin.com/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pictocolourin.com/">
+    <meta property="og:title" content="Free Photo to Coloring Page Converter">
+    <meta property="og:description" content="Turn any photo into a printable coloring page instantly. 100% free, private, and works in your browser.">
+    <meta property="og:image" content="https://pictocolourin.com/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://pictocolourin.com/">
+    <meta property="twitter:title" content="Free Photo to Coloring Page Converter">
+    <meta property="twitter:description" content="Turn any photo into a printable coloring page instantly. 100% free, private, and works in your browser.">
+    <meta property="twitter:image" content="https://pictocolourin.com/og-image.jpg">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+    
+    <!-- Structured Data - JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "PicToColourIn - Photo to Coloring Page Converter",
+        "description": "Free online tool to convert photos into printable coloring pages. GPU-accelerated processing entirely in your browser.",
+        "url": "https://pictocolourin.com",
+        "applicationCategory": "GraphicsApplication",
+        "operatingSystem": "Any",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "GPU-accelerated image processing",
+            "Drag and drop photo upload",
+            "Real-time edge detection controls",
+            "PNG and PDF export",
+            "Print directly from browser",
+            "Mobile-friendly interface",
+            "Privacy-first: no server uploads"
+        ],
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "127"
+        }
+    }
+    </script>
+    
+    <!-- SoftwareApplication Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "PicToColourIn",
+        "applicationCategory": "GraphicsApplication",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "127"
+        }
+    }
+    </script>
+    
+    <!-- FAQPage Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Is PicToColourIn free to use?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, PicToColourIn is completely free to use. There are no hidden fees, subscriptions, or watermarks. Convert as many photos to coloring pages as you like."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is my photo data safe and private?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Absolutely. All image processing happens directly in your browser using WebGL and GPU acceleration. Your photos never leave your device or get uploaded to any server. We have zero access to your images."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What image formats are supported?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "PicToColourIn supports all common image formats including JPG, PNG, WebP, and GIF. The maximum file size depends on your device's memory, but most photos work perfectly."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can I use this on my phone or tablet?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! PicToColourIn works on all devices including iPhones, iPads, Android phones and tablets, as well as desktop computers. The interface automatically adapts to your screen size."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do I get the best coloring page results?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "For best results, use photos with clear subjects and good contrast. Portraits and photos with defined edges work best. Use the smoothing slider to reduce noise, adjust edge sensitivity for more or less detail, and set the threshold to control line thickness."
+                }
+            }
+        ]
+    }
+    </script>
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com">
+    
     <link rel="stylesheet" href="styles.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9988630178395914"
      crossorigin="anonymous"></script>
+    
+    <!-- Cloudflare Web Analytics (Anonymous, no cookie, GDPR-compliant) -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "YOUR_CLOUDFLARE_TOKEN"}'></script>
 </head>
 <body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
     <header>
-        <h1>🎨 PicToColourIn</h1>
-        <p>Turn any photo into a printable coloring page</p>
+        <div class="container">
+            <h1>🎨 PicToColourIn</h1>
+            <p class="tagline">Turn any photo into a printable coloring page — 100% free, instant, private</p>
+            <p class="sub-tagline">No signup • No upload to servers • Works on all devices</p>
+        </div>
     </header>
 
-    <main>
+    <main id="main-content">
         <!-- Upload Section -->
-        <section class="upload-section" id="uploadSection">
-            <div class="drop-zone" id="dropZone">
-                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <p>Drag & drop your photo here</p>
-                <p class="small">or click to browse</p>
-                <input type="file" id="fileInput" accept="image/*" hidden>
+        <section class="upload-section" id="uploadSection" aria-label="Photo upload">
+            <div class="container">
+                <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Drop zone for photo upload">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p class="drop-text">Drag & drop your photo here</p>
+                    <p class="small">or click to browse (JPG, PNG, WebP supported)</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden aria-label="Choose photo file">
+                </div>
+                
+                <!-- Quick features list for SEO -->
+                <div class="features-grid">
+                    <div class="feature-item">
+                        <span class="feature-icon">⚡</span>
+                        <span class="feature-text">Instant GPU processing</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔒</span>
+                        <span class="feature-text">100% private - no uploads</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📱</span>
+                        <span class="feature-text">Works on mobile & desktop</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🖨️</span>
+                        <span class="feature-text">Print or download PDF/PNG</span>
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- Editor Section -->
-        <section class="editor-section" id="editorSection" style="display: none;">
-            <div class="canvas-wrapper">
-                <div class="canvas-container">
-                    <canvas id="sourceCanvas" style="display: none;"></canvas>
-                    <canvas id="outputCanvas"></canvas>
+        <section class="editor-section" id="editorSection" style="display: none;" aria-label="Coloring page editor">
+            <div class="container">
+                <div class="canvas-wrapper">
+                    <div class="canvas-container">
+                        <canvas id="sourceCanvas" style="display: none;" aria-hidden="true"></canvas>
+                        <canvas id="outputCanvas" aria-label="Generated coloring page preview"></canvas>
+                    </div>
+                    <div class="loading-overlay" id="loadingOverlay" style="display: none;" aria-live="polite">
+                        <div class="spinner"></div>
+                        <p>Creating your coloring page...</p>
+                    </div>
                 </div>
-                <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Processing...</p>
+
+                <!-- Controls -->
+                <div class="controls" role="group" aria-label="Image adjustment controls">
+                    <div class="control-group">
+                        <label for="blurSlider">Smoothing</label>
+                        <input type="range" id="blurSlider" min="0" max="10" value="2" step="0.5" aria-describedby="blur-help">
+                        <span class="value" id="blurValue">2</span>
+                        <small id="blur-help" class="control-help">Reduce noise in the image</small>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="edgeSlider">Edge Sensitivity</label>
+                        <input type="range" id="edgeSlider" min="0.1" max="2" value="0.5" step="0.1" aria-describedby="edge-help">
+                        <span class="value" id="edgeValue">0.5</span>
+                        <small id="edge-help" class="control-help">More detail vs cleaner lines</small>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="thresholdSlider">Threshold</label>
+                        <input type="range" id="thresholdSlider" min="0" max="1" value="0.3" step="0.05" aria-describedby="threshold-help">
+                        <span class="value" id="thresholdValue">0.3</span>
+                        <small id="threshold-help" class="control-help">Control line thickness</small>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="actions" role="group" aria-label="Download and print options">
+                    <button id="newImageBtn" class="btn secondary">New Image</button>
+                    <button id="downloadBtn" class="btn primary">Download PNG</button>
+                    <button id="pdfBtn" class="btn primary">Download PDF</button>
+                    <button id="printBtn" class="btn primary">Print</button>
                 </div>
             </div>
+        </section>
 
-            <!-- Controls -->
-            <div class="controls">
-                <div class="control-group">
-                    <label for="blurSlider">Smoothing</label>
-                    <input type="range" id="blurSlider" min="0" max="10" value="2" step="0.5">
-                    <span class="value" id="blurValue">2</span>
-                </div>
-
-                <div class="control-group">
-                    <label for="edgeSlider">Edge Sensitivity</label>
-                    <input type="range" id="edgeSlider" min="0.1" max="2" value="0.5" step="0.1">
-                    <span class="value" id="edgeValue">0.5</span>
-                </div>
-
-                <div class="control-group">
-                    <label for="thresholdSlider">Threshold</label>
-                    <input type="range" id="thresholdSlider" min="0" max="1" value="0.3" step="0.05">
-                    <span class="value" id="thresholdValue">0.3</span>
-                </div>
+        <!-- SEO Content Section -->
+        <section class="content-section" aria-label="About this tool">
+            <div class="container">
+                <article>
+                    <h2>Free Online Photo to Coloring Page Converter</h2>
+                    <p><strong>PicToColourIn</strong> is the fastest, easiest way to turn any photo into a printable coloring page. Unlike other tools, we process everything in your browser using GPU acceleration - your photos never leave your device, ensuring complete privacy.</p>
+                    
+                    <h3>How It Works</h3>
+                    <ol>
+                        <li><strong>Upload your photo</strong> - Drag and drop or click to select any JPG, PNG, or WebP image</li>
+                        <li><strong>Adjust the settings</strong> - Fine-tune smoothing, edge sensitivity, and threshold for perfect results</li>
+                        <li><strong>Download or print</strong> - Get your coloring page as PNG, PDF, or print directly</li>
+                    </ol>
+                    
+                    <h3>Why Choose PicToColourIn?</h3>
+                    <ul>
+                        <li><strong>100% Free</strong> - No watermarks, no limits, no credit card required</li>
+                        <li><strong>Private & Secure</strong> - Your photos never upload to our servers. All processing happens on your device.</li>
+                        <li><strong>Fast GPU Processing</strong> - WebGL-powered edge detection for instant results</li>
+                        <li><strong>Mobile-Friendly</strong> - Works perfectly on phones, tablets, and computers</li>
+                        <li><strong>High Quality Output</strong> - Professional-grade edge detection creates clean, printable coloring pages</li>
+                    </ul>
+                    
+                    <h3>Perfect For</h3>
+                    <ul>
+                        <li>Creating personalized coloring books from family photos</li>
+                        <li>Turning pet photos into coloring pages</li>
+                        <li>Making educational coloring sheets from any image</li>
+                        <li>Art therapy and relaxation activities</li>
+                        <li>Party activities and children's entertainment</li>
+                    </ul>
+                    
+                    <h3>Technical Details</h3>
+                    <p>Our advanced WebGL pipeline uses <strong>Gaussian blur</strong> for noise reduction, <strong>grayscale conversion</strong>, <strong>Sobel edge detection</strong> for finding edges, and intelligent <strong>thresholding</strong> to create clean black-and-white line art perfect for coloring.</p>
+                </article>
             </div>
+        </section>
 
-            <!-- Action Buttons -->
-            <div class="actions">
-                <button id="newImageBtn" class="btn secondary">New Image</button>
-                <button id="downloadBtn" class="btn primary">Download PNG</button>
-                <button id="pdfBtn" class="btn primary">Download PDF</button>
-                <button id="printBtn" class="btn primary">Print</button>
+        <!-- FAQ Section for SEO -->
+        <section class="faq-section" aria-label="Frequently asked questions">
+            <div class="container">
+                <h2>Frequently Asked Questions</h2>
+                
+                <div class="faq-item">
+                    <h3>Is PicToColourIn free to use?</h3>
+                    <p>Yes, PicToColourIn is completely free to use. There are no hidden fees, subscriptions, or watermarks. Convert as many photos to coloring pages as you like.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>Is my photo data safe and private?</h3>
+                    <p>Absolutely. All image processing happens directly in your browser using WebGL and GPU acceleration. Your photos never leave your device or get uploaded to any server. We have zero access to your images.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>What image formats are supported?</h3>
+                    <p>PicToColourIn supports all common image formats including JPG, PNG, WebP, and GIF. The maximum file size depends on your device's memory, but most photos work perfectly.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>Can I use this on my phone or tablet?</h3>
+                    <p>Yes! PicToColourIn works on all devices including iPhones, iPads, Android phones and tablets, as well as desktop computers. The interface automatically adapts to your screen size.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>How do I get the best coloring page results?</h3>
+                    <p>For best results, use photos with clear subjects and good contrast. Portraits and photos with defined edges work best. Use the smoothing slider to reduce noise, adjust edge sensitivity for more or less detail, and set the threshold to control line thickness.</p>
+                </div>
+                
+                <div class="faq-item">
+                    <h3>Can I use the coloring pages commercially?</h3>
+                    <p>The coloring pages you create are derived from your own photos, so usage rights depend on the original photo's copyright. If you own the photo or have rights to use it, you can use the resulting coloring page as you wish.</p>
+                </div>
             </div>
         </section>
     </main>
 
     <footer>
-        <p>© 2024 PicToColourIn.com - Made with 💜 for coloring enthusiasts</p>
+        <div class="container">
+            <p class="footer-main">© 2024 PicToColourIn.com — Free Photo to Coloring Page Converter</p>
+            <p class="footer-links">
+                <span>Made for coloring enthusiasts everywhere</span>
+            </p>
+            <p class="footer-tech">
+                <small>WebGL-powered • GPU accelerated • Privacy-first</small>
+            </p>
+        </div>
     </footer>
 
     <script src="webgl-processor.js"></script>

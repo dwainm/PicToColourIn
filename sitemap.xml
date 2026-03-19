@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+    
+    <url>
+        <loc>https://pictocolourin.com/</loc>
+        <lastmod>2024-03-19</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://pictocolourin.com/"/>
+        <image:image>
+            <image:loc>https://pictocolourin.com/og-image.jpg</image:loc>
+            <image:title>PicToColourIn - Free Photo to Coloring Page Converter</image:title>
+            <image:caption>Turn any photo into a printable coloring page instantly</image:caption>
+        </image:image>
+    </url>
+    
+</urlset>

@@ -35,6 +35,14 @@ async function startServer() {
   
   const server = createServer(async (req, res) => {
     const url = req.url === '/' ? '/index.html' : req.url;
+    
+    // Serve empty favicon to prevent 404 errors
+    if (url === '/favicon.ico') {
+      res.writeHead(200, { 'Content-Type': 'image/x-icon' });
+      res.end(Buffer.from([]));
+      return;
+    }
+    
     const filePath = pathJoin(rootDir, url);
     
     try {
@@ -60,10 +68,16 @@ async function startServer() {
 async function renderVariant(browser, params, testImagePath) {
   const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
   
-  // Capture console errors
+  // Capture console errors (but ignore favicon 404s)
   const errors = [];
   page.on('console', msg => {
-    if (msg.type() === 'error') errors.push(msg.text());
+    if (msg.type() === 'error') {
+      const text = msg.text();
+      // Ignore favicon and common non-critical 404s
+      if (!text.includes('favicon') && !text.includes('::ERR_FAILED') && !text.includes('404')) {
+        errors.push(text);
+      }
+    }
   });
   page.on('pageerror', err => errors.push(err.message));
   

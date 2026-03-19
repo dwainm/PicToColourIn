@@ -1,0 +1,41 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://pictocolourin.com/sitemap.xml
+
+# Crawl rate
+Crawl-delay: 1
+
+# Disallow patterns that don't exist but good for safety
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+Disallow: /temp/
+Disallow: /*?*session
+Disallow: /*?*token
+
+# Allow static assets
+Allow: /styles.css
+Allow: /app.js
+Allow: /webgl-processor.js
+Allow: /*.jpg$
+Allow: /*.png$
+Allow: /*.svg$
+
+# Specific bot optimizations
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: AhrefsBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: SemrushBot
+Allow: /
+Crawl-delay: 2
