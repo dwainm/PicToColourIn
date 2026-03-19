@@ -493,3 +493,45 @@ const DOG_FRAGMENT_SHADER = `
 if (typeof window !== 'undefined') {
     window.WebGLProcessor = WebGLProcessor;
 }
+
+// Post-processing fragment shader for morphological smoothing
+const SMOOTH_FRAGMENT_SHADER = `
+    precision mediump float;
+    varying vec2 v_texCoord;
+    
+    uniform sampler2D u_sourceTexture;
+    uniform vec2 u_resolution;
+    
+    void main() {
+        vec2 texelSize = 1.0 / u_resolution;
+        
+        float tl = texture2D(u_sourceTexture, v_texCoord + vec2(-1.0, -1.0) * texelSize).r;
+        float tc = texture2D(u_sourceTexture, v_texCoord + vec2( 0.0, -1.0) * texelSize).r;
+        float tr = texture2D(u_sourceTexture, v_texCoord + vec2( 1.0, -1.0) * texelSize).r;
+        float cl = texture2D(u_sourceTexture, v_texCoord + vec2(-1.0,  0.0) * texelSize).r;
+        float cc = texture2D(u_sourceTexture, v_texCoord).r;
+        float cr = texture2D(u_sourceTexture, v_texCoord + vec2( 1.0,  0.0) * texelSize).r;
+        float bl = texture2D(u_sourceTexture, v_texCoord + vec2(-1.0,  1.0) * texelSize).r;
+        float bc = texture2D(u_sourceTexture, v_texCoord + vec2( 0.0,  1.0) * texelSize).r;
+        float br = texture2D(u_sourceTexture, v_texCoord + vec2( 1.0,  1.0) * texelSize).r;
+        
+        float sum = tl + tc + tr + cl + cc + cr + bl + bc + br;
+        float avg = sum / 9.0;
+        
+        float result;
+        if (cc < 0.1) {
+            result = cc;
+        } else if (cc > 0.9) {
+            result = avg * 0.1 + cc * 0.9;
+        } else {
+            result = avg * 0.3 + cc * 0.7;
+        }
+        
+        gl_FragColor = vec4(vec3(result), 1.0);
+    }
+`;
+
+// Expose to window
+if (typeof window !== 'undefined') {
+    window.WebGLProcessor = WebGLProcessor;
+}
