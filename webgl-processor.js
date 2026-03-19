@@ -92,6 +92,9 @@ class WebGLProcessor {
         // Gaussian blur program (separable, two-pass)
         this.programs.blur = this.createProgram(VERTEX_SHADER, BLUR_FRAGMENT_SHADER);
         
+        // Bilateral filter for edge-preserving smoothing
+        this.programs.bilateral = this.createProgram(VERTEX_SHADER, BILATERAL_FRAGMENT_SHADER);
+        
         // Difference of Gaussians (DoG) edge detection
         this.programs.dog = this.createProgram(VERTEX_SHADER, DOG_FRAGMENT_SHADER);
     }
@@ -224,6 +227,30 @@ class WebGLProcessor {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
+    renderBilateralPass(inputTexture, outputFramebuffer, radius) {
+        const gl = this.gl;
+        const program = this.programs.bilateral;
+        
+        gl.useProgram(program.program);
+        
+        if (outputFramebuffer) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, outputFramebuffer);
+        } else {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        }
+        
+        this.bindGeometry(program);
+        
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, inputTexture);
+        gl.uniform1i(program.uniforms.sourceTexture, 0);
+        
+        gl.uniform2f(program.uniforms.resolution, this.width, this.height);
+        gl.uniform1f(program.uniforms.radius, radius);
+        
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
     renderDoGPass(narrowBlurTexture, wideBlurTexture, params) {
         const gl = this.gl;
         const program = this.programs.dog;
@@ -274,12 +301,13 @@ class WebGLProcessor {
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffers.blurNarrowResult);
         this.renderBlurPass(this.textures.blurNarrowTemp, this.framebuffers.blurNarrowResult, [0, 1], narrowRadius);
         
-        // Pass 3: Wide horizontal blur from source -> blurWideTemp  
-        this.renderBlurPass(this.textures.source, this.framebuffers.blurWideTemp, [1, 0], wideRadius);
+        // Pass 3 & 4: Wide bilateral filter (edge-preserving) from source -> blurWideResult
+        this.ensureBilateralTexture();
+        this.renderBilateralPass(this.textures.source, this.framebuffers.bilateralTemp, wideRadius);
         
-        // Pass 4: Wide vertical blur from blurWideTemp -> blurWideResult
+        // Copy bilateral result to blurWideResult format for DoG
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffers.blurWideResult);
-        this.renderBlurPass(this.textures.blurWideTemp, this.framebuffers.blurWideResult, [0, 1], wideRadius);
+        this.renderBlurPass(this.textures.bilateralTemp, this.framebuffers.blurWideResult, [0, 1], 0.1);
         
         // Pass 5: DoG edge detection (subtract wide from narrow, threshold)
         this.renderDoGPass(this.textures.blurNarrowResult, this.textures.blurWideResult, { 
@@ -352,6 +380,24 @@ class WebGLProcessor {
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.blurWideResult, 0);
         }
         
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    ensureBilateralTexture() {
+        if (this.textures.bilateralTemp) return;
+        
+        const gl = this.gl;
+        this.textures.bilateralTemp = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.textures.bilateralTemp);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        
+        this.framebuffers.bilateralTemp = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.bilateralTemp);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.bilateralTemp, 0);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 
