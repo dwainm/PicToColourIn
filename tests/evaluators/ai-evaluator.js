@@ -1,20 +1,21 @@
-import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * AI-powered image quality evaluator
- * Uses Claude Vision to assess coloring book suitability
+ * Uses Kimi 2 via Fireworks AI to assess coloring book suitability
  */
 export class AIColoringEvaluator {
-  constructor(apiKey = process.env.ANTHROPIC_API_KEY) {
+  constructor(apiKey = process.env.FIREWORKS_API_KEY) {
     if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY required');
+      throw new Error('FIREWORKS_API_KEY required. Get one at https://fireworks.ai/account/api-keys');
     }
-    this.client = new Anthropic({ apiKey });
+    this.apiKey = apiKey;
+    this.baseUrl = 'https://api.fireworks.ai/inference/v1';
+    this.model = 'accounts/fireworks/models/kimi-k2'; // Kimi 2 on Fireworks
   }
 
   async evaluate(imagePath, criteria = 'standard') {
@@ -62,44 +63,59 @@ JSON response only:
 }`
     };
 
-    const response = await this.client.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1024,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: 'image/png',
-              data: base64Image
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: this.model,
+        max_tokens: 1024,
+        temperature: 0.2, // Lower for consistent JSON output
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:image/png;base64,${base64Image}`
+              }
+            },
+            {
+              type: 'text',
+              text: criteriaPrompts[criteria] || criteriaPrompts.standard
             }
-          },
-          {
-            type: 'text',
-            text: criteriaPrompts[criteria] || criteriaPrompts.standard
-          }
-        ]
-      }]
+          ]
+        }]
+      })
     });
 
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Fireworks API error: ${response.status} ${error}`);
+    }
+
+    const data = await response.json();
+    const text = data.choices[0].message.content;
+
     // Extract JSON from response
-    const text = response.content[0].text;
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     
     if (!jsonMatch) {
+      console.error('Raw response:', text);
       throw new Error('Could not parse AI response as JSON');
     }
 
     return JSON.parse(jsonMatch[0]);
   }
 
-  async compareVariants(originalPath, variants) {
+  async compareVariants(variants) {
     // variants = [{ path: '...', label: 'blur-2.0', params: {...} }, ...]
     
     const results = [];
     for (const variant of variants) {
+      console.log(`  Evaluating: ${variant.label}...`);
       const evaluation = await this.evaluate(variant.path);
       results.push({
         ...variant,
@@ -124,7 +140,7 @@ JSON response only:
     return {
       recommendedParams: winner.params,
       margin: winner.evaluation.overall - runnerUp.evaluation.overall,
-      insights: winner.evaluation.suggestions,
+      insights: winner.evaluation.suggestions || [],
       confidence: winner.evaluation.overall > 8 ? 'high' : winner.evaluation.overall > 6 ? 'medium' : 'low'
     };
   }
@@ -137,6 +153,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (!imagePath) {
     console.log('Usage: node ai-evaluator.js <image-path> [criteria]');
     console.log('  criteria: standard (default) | strict');
+    console.log('');
+    console.log('Environment:');
+    console.log('  FIREWORKS_API_KEY - Required. Get at https://fireworks.ai/account/api-keys');
     process.exit(1);
   }
 

@@ -20,8 +20,8 @@ test.describe('Coloring Page Generation', () => {
   
   test.beforeAll(() => {
     // Skip if no API key
-    if (!process.env.ANTHROPIC_API_KEY) {
-      console.log('⚠️  No ANTHROPIC_API_KEY, AI evaluation will be skipped');
+    if (!process.env.FIREWORKS_API_KEY) {
+      console.log('⚠️  No FIREWORKS_API_KEY, AI evaluation will be skipped');
     }
     evaluator = new AIColoringEvaluator();
   });
@@ -61,7 +61,7 @@ test.describe('Coloring Page Generation', () => {
       });
       
       // AI Evaluation (if API key available)
-      if (process.env.ANTHROPIC_API_KEY) {
+      if (process.env.FIREWORKS_API_KEY) {
         const evaluation = await evaluator.evaluate(
           join(OUTPUT_DIR, `render-${params.label}.png`),
           'standard'
@@ -86,7 +86,7 @@ test.describe('Coloring Page Generation', () => {
 
 test.describe('Shader Parameter Optimization', () => {
   test('find best parameters via AI comparison', async ({ page }) => {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.FIREWORKS_API_KEY) {
       test.skip();
     }
 

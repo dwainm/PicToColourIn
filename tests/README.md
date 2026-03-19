@@ -1,13 +1,13 @@
 # Automated Quality Testing
 
-AI-powered visual regression testing for the coloring page generator.
+AI-powered visual regression testing using **Kimi 2 via Fireworks AI** for the coloring page generator.
 
 ## Structure
 
 ```
 tests/
 ├── evaluators/         # AI evaluation logic
-│   └── ai-evaluator.js # Claude Vision integration
+│   └── ai-evaluator.js # Kimi 2 Vision via Fireworks AI
 ├── fixtures/           # Test images
 ├── outputs/           # Generated renders (gitignored)
 ├── tuning-results/    # Parameter optimization results (gitignored)
@@ -15,20 +15,36 @@ tests/
 └── tuner.js          # Parameter search harness
 ```
 
-## Usage
+## Setup
 
-### 1. Install dependencies
+### 1. Get Fireworks API Key
+- Go to [fireworks.ai](https://fireworks.ai/account/api-keys)
+- Create an API key
+- Kimi 2 model: `accounts/fireworks/models/kimi-k2`
+
+### 2. Install dependencies
 ```bash
 cd tests
 npm install
 ```
 
-### 2. Set API key
+### 3. Set API key
 ```bash
-export ANTHROPIC_API_KEY=your_key_here
+export FIREWORKS_API_KEY=your_key_here
 ```
 
-### 3. Run quality tests
+## Usage
+
+### Quick evaluation
+```bash
+# Evaluate a single image
+node evaluators/ai-evaluator.js ./outputs/render-balanced.png
+
+# With strict criteria
+node evaluators/ai-evaluator.js ./outputs/render-balanced.png strict
+```
+
+### Run full test suite
 ```bash
 # Start your dev server first (localhost:3000)
 npm run test
@@ -37,7 +53,7 @@ npm run test
 npm run test:ui
 ```
 
-### 4. Run parameter optimization
+### Run parameter optimization
 ```bash
 npm run benchmark
 ```
@@ -45,7 +61,7 @@ npm run benchmark
 ## How It Works
 
 1. **Generate variants** with different shader parameters
-2. **AI evaluates** each output on 5 criteria:
+2. **Kimi 2 evaluates** each output on 5 criteria:
    - Line clarity (crisp, continuous outlines)
    - Detail balance (not too cluttered/empty)
    - Recognizability (clear subject identification)
@@ -63,3 +79,10 @@ Tests run in CI but skip AI evaluation if no API key:
 ## Deployment Exclusion
 
 Tests are NOT deployed to Cloudflare Pages (see `../.gitignore`).
+
+## Model Info
+
+- **Provider**: Fireworks AI
+- **Model**: Kimi 2 (`accounts/fireworks/models/kimi-k2`)
+- **Pricing**: ~$0.50-1.00 per 1K images (much cheaper than Claude)
+- **Vision**: Native image understanding for quality assessment
