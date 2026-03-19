@@ -8,8 +8,9 @@ class ColoringApp {
         this.sourceImage = null;
         this.processingParams = {
             blurRadius: 2.0,
-            edgeIntensity: 0.5,
-            threshold: 0.3
+            edgeIntensity: 0.8,
+            threshold: 0.25,
+            sigmaRatio: 2.0
         };
         
         this.init();
@@ -251,21 +252,22 @@ class ColoringApp {
         // Reset file input
         this.fileInput.value = '';
         
-        // Reset sliders to defaults
+        // Reset sliders to defaults (DoG tuned)
         this.blurSlider.value = 2;
-        this.edgeSlider.value = 0.5;
-        this.thresholdSlider.value = 0.3;
+        this.edgeSlider.value = 0.8;
+        this.thresholdSlider.value = 0.25;
         
         // Reset values display
         this.blurValue.textContent = '2';
-        this.edgeValue.textContent = '0.5';
-        this.thresholdValue.textContent = '0.3';
+        this.edgeValue.textContent = '0.8';
+        this.thresholdValue.textContent = '0.25';
         
-        // Reset params (always black lines on white for coloring pages)
+        // Reset params (DoG: Difference of Gaussians)
         this.processingParams = {
             blurRadius: 2.0,
-            edgeIntensity: 0.5,
-            threshold: 0.3
+            edgeIntensity: 0.8,
+            threshold: 0.25,
+            sigmaRatio: 2.0
         };
     }
 }

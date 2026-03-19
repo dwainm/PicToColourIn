@@ -77,12 +77,13 @@ class WebGLProcessor {
             },
             uniforms: {
                 sourceTexture: gl.getUniformLocation(program, 'u_sourceTexture'),
+                blurTexture: gl.getUniformLocation(program, 'u_blurTexture'),
                 resolution: gl.getUniformLocation(program, 'u_resolution'),
                 direction: gl.getUniformLocation(program, 'u_direction'),
                 radius: gl.getUniformLocation(program, 'u_radius'),
                 edgeIntensity: gl.getUniformLocation(program, 'u_edgeIntensity'),
                 threshold: gl.getUniformLocation(program, 'u_threshold'),
-                invert: gl.getUniformLocation(program, 'u_invert')
+                sigmaRatio: gl.getUniformLocation(program, 'u_sigmaRatio')
             }
         };
     }
@@ -91,8 +92,8 @@ class WebGLProcessor {
         // Gaussian blur program (separable, two-pass)
         this.programs.blur = this.createProgram(VERTEX_SHADER, BLUR_FRAGMENT_SHADER);
         
-        // Edge detection program
-        this.programs.edge = this.createProgram(VERTEX_SHADER, EDGE_FRAGMENT_SHADER);
+        // Difference of Gaussians (DoG) edge detection
+        this.programs.dog = this.createProgram(VERTEX_SHADER, DOG_FRAGMENT_SHADER);
     }
 
     setupGeometry() {
@@ -223,22 +224,29 @@ class WebGLProcessor {
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
 
-    renderEdgePass(inputTexture, params) {
+    renderDoGPass(narrowBlurTexture, wideBlurTexture, params) {
         const gl = this.gl;
-        const program = this.programs.edge;
+        const program = this.programs.dog;
         
         gl.useProgram(program.program);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         
         this.bindGeometry(program);
         
+        // Bind narrow blur (sharper, smaller sigma)
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, inputTexture);
+        gl.bindTexture(gl.TEXTURE_2D, narrowBlurTexture);
         gl.uniform1i(program.uniforms.sourceTexture, 0);
+        
+        // Bind wide blur (softer, larger sigma)
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, wideBlurTexture);
+        gl.uniform1i(program.uniforms.blurTexture, 1);
         
         gl.uniform2f(program.uniforms.resolution, this.width, this.height);
         gl.uniform1f(program.uniforms.edgeIntensity, params.edgeIntensity);
         gl.uniform1f(program.uniforms.threshold, params.threshold);
+        gl.uniform1f(program.uniforms.sigmaRatio, params.sigmaRatio || 2.0);
         
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
@@ -247,47 +255,109 @@ class WebGLProcessor {
         const {
             blurRadius = 2.0,
             edgeIntensity = 0.5,
-            threshold = 0.3
+            threshold = 0.3,
+            sigmaRatio = 2.0  // Wide blur is sigmaRatio times larger than narrow
         } = params;
         
-        // Skip blur if radius is small
-        if (blurRadius < 0.5) {
-            this.renderEdgePass(this.textures.source, { edgeIntensity, threshold });
-            return;
+        // Ensure we have textures for both blur results
+        this.ensureBlurTextures();
+        
+        // Narrow blur radius (smaller sigma, preserves more detail)
+        const narrowRadius = blurRadius;
+        // Wide blur radius (larger sigma, suppresses fine details)
+        const wideRadius = blurRadius * sigmaRatio;
+        
+        // Pass 1: Narrow horizontal blur from source -> blurNarrowTemp
+        this.renderBlurPass(this.textures.source, this.framebuffers.blurNarrowTemp, [1, 0], narrowRadius);
+        
+        // Pass 2: Narrow vertical blur from blurNarrowTemp -> blurNarrowResult
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffers.blurNarrowResult);
+        this.renderBlurPass(this.textures.blurNarrowTemp, this.framebuffers.blurNarrowResult, [0, 1], narrowRadius);
+        
+        // Pass 3: Wide horizontal blur from source -> blurWideTemp  
+        this.renderBlurPass(this.textures.source, this.framebuffers.blurWideTemp, [1, 0], wideRadius);
+        
+        // Pass 4: Wide vertical blur from blurWideTemp -> blurWideResult
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffers.blurWideResult);
+        this.renderBlurPass(this.textures.blurWideTemp, this.framebuffers.blurWideResult, [0, 1], wideRadius);
+        
+        // Pass 5: DoG edge detection (subtract wide from narrow, threshold)
+        this.renderDoGPass(this.textures.blurNarrowResult, this.textures.blurWideResult, { 
+            edgeIntensity, 
+            threshold,
+            sigmaRatio 
+        });
+    }
+
+    ensureBlurTextures() {
+        const gl = this.gl;
+        
+        // Narrow blur temp texture and framebuffer
+        if (!this.textures.blurNarrowTemp) {
+            this.textures.blurNarrowTemp = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.textures.blurNarrowTemp);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            
+            this.framebuffers.blurNarrowTemp = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.blurNarrowTemp);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.blurNarrowTemp, 0);
         }
         
-        // Two-pass Gaussian blur
-        // Pass 1: Horizontal blur from source -> blurTemp
-        this.renderBlurPass(this.textures.source, this.framebuffers.blurTemp, [1, 0], blurRadius);
+        // Narrow blur result texture and framebuffer
+        if (!this.textures.blurNarrowResult) {
+            this.textures.blurNarrowResult = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.textures.blurNarrowResult);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            
+            this.framebuffers.blurNarrowResult = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.blurNarrowResult);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.blurNarrowResult, 0);
+        }
         
-        // Pass 2: Vertical blur from blurTemp -> screen
-        // But we need to render to screen for edge detection to work on blurred image
-        // Create a temporary texture for the fully blurred result
-        this.ensureBlurResultTexture();
+        // Wide blur temp texture and framebuffer
+        if (!this.textures.blurWideTemp) {
+            this.textures.blurWideTemp = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.textures.blurWideTemp);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            
+            this.framebuffers.blurWideTemp = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.blurWideTemp);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.blurWideTemp, 0);
+        }
         
-        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffers.blurResult);
-        this.renderBlurPass(this.textures.blurTemp, this.framebuffers.blurResult, [0, 1], blurRadius);
+        // Wide blur result texture and framebuffer
+        if (!this.textures.blurWideResult) {
+            this.textures.blurWideResult = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.textures.blurWideResult);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            
+            this.framebuffers.blurWideResult = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.blurWideResult);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.blurWideResult, 0);
+        }
         
-        // Edge detection on blurred image
-        this.renderEdgePass(this.textures.blurResult, { edgeIntensity, threshold });
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 
     ensureBlurResultTexture() {
-        if (this.textures.blurResult) return;
-        
-        const gl = this.gl;
-        this.textures.blurResult = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.textures.blurResult);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        
-        this.framebuffers.blurResult = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.blurResult);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.textures.blurResult, 0);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        // Kept for backward compatibility, but now handled by ensureBlurTextures
+        this.ensureBlurTextures();
     }
 
     getOutputCanvas() {
@@ -348,12 +418,14 @@ const BLUR_FRAGMENT_SHADER = `
     }
 `;
 
-// Edge Detection Fragment Shader - Always outputs black lines on white background
-const EDGE_FRAGMENT_SHADER = `
+// Difference of Gaussians (DoG) Fragment Shader
+// Produces cleaner, more artistic edges than Sobel
+const DOG_FRAGMENT_SHADER = `
     precision mediump float;
     varying vec2 v_texCoord;
     
-    uniform sampler2D u_sourceTexture;
+    uniform sampler2D u_sourceTexture;   // Narrow blur (sharper)
+    uniform sampler2D u_blurTexture;     // Wide blur (softer)
     uniform vec2 u_resolution;
     uniform float u_edgeIntensity;
     uniform float u_threshold;
@@ -363,24 +435,18 @@ const EDGE_FRAGMENT_SHADER = `
     }
     
     void main() {
-        vec2 texelSize = 1.0 / u_resolution;
+        // Sample both blur levels
+        float narrow = grayscale(texture2D(u_sourceTexture, v_texCoord));
+        float wide = grayscale(texture2D(u_blurTexture, v_texCoord));
         
-        // Sample neighboring pixels
-        float tl = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2(-1.0, -1.0) * texelSize));
-        float tc = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2( 0.0, -1.0) * texelSize));
-        float tr = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2( 1.0, -1.0) * texelSize));
-        float cl = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2(-1.0,  0.0) * texelSize));
-        float cr = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2( 1.0,  0.0) * texelSize));
-        float bl = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2(-1.0,  1.0) * texelSize));
-        float bc = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2( 0.0,  1.0) * texelSize));
-        float br = grayscale(texture2D(u_sourceTexture, v_texCoord + vec2( 1.0,  1.0) * texelSize));
+        // Difference of Gaussians: narrow - wide
+        // This highlights edges where intensity changes rapidly
+        float edge = narrow - wide;
         
-        // Sobel operator
-        float gx = tl + 2.0 * cl + bl - tr - 2.0 * cr - br;
-        float gy = tl + 2.0 * tc + tr - bl - 2.0 * bc - br;
-        float edge = sqrt(gx * gx + gy * gy);
+        // Take absolute value (edges can be light-to-dark or dark-to-light)
+        edge = abs(edge);
         
-        // Apply intensity
+        // Apply intensity scaling
         edge *= u_edgeIntensity * 4.0;
         
         // Threshold - edge > threshold means we have a line (black), else white background
