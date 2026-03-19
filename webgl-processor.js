@@ -418,7 +418,7 @@ const BLUR_FRAGMENT_SHADER = `
     }
 `;
 
-// Difference of Gaussians (DoG) Fragment Shader
+// Difference of Gaussians (DoG) Fragment Shader with soft thresholding
 // Produces cleaner, more artistic edges than Sobel
 const DOG_FRAGMENT_SHADER = `
     precision mediump float;
@@ -440,17 +440,31 @@ const DOG_FRAGMENT_SHADER = `
         float wide = grayscale(texture2D(u_blurTexture, v_texCoord));
         
         // Difference of Gaussians: narrow - wide
-        // This highlights edges where intensity changes rapidly
         float edge = narrow - wide;
         
         // Take absolute value (edges can be light-to-dark or dark-to-light)
         edge = abs(edge);
         
-        // Apply intensity scaling
-        edge *= u_edgeIntensity * 4.0;
+        // Contrast stretching: boost mid-tones for more visible edges
+        edge = pow(edge, 0.7); // Compress high values, expand low values
         
-        // Threshold - edge > threshold means we have a line (black), else white background
-        float result = edge > u_threshold ? 0.0 : 1.0;
+        // Apply intensity scaling
+        edge *= u_edgeIntensity * 5.0;
+        
+        // Soft thresholding with smooth transition (anti-aliased edges)
+        float thresholdLow = u_threshold * 0.7;
+        float thresholdHigh = u_threshold * 1.3;
+        
+        float result;
+        if (edge > thresholdHigh) {
+            result = 0.0; // Strong edge = black
+        } else if (edge < thresholdLow) {
+            result = 1.0; // No edge = white
+        } else {
+            // Smooth transition between black and white
+            float t = (edge - thresholdLow) / (thresholdHigh - thresholdLow);
+            result = 1.0 - t; // Gradual fade from white to black
+        }
         
         gl_FragColor = vec4(vec3(result), 1.0);
     }
