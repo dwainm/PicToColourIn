@@ -9,8 +9,7 @@ class ColoringApp {
         this.processingParams = {
             blurRadius: 2.0,
             edgeIntensity: 0.5,
-            threshold: 0.3,
-            invert: true  // Always true for coloring pages (black lines on white)
+            threshold: 0.3
         };
         
         this.init();
@@ -262,12 +261,11 @@ class ColoringApp {
         this.edgeValue.textContent = '0.5';
         this.thresholdValue.textContent = '0.3';
         
-        // Reset params (always inverted for coloring pages)
+        // Reset params (always black lines on white for coloring pages)
         this.processingParams = {
             blurRadius: 2.0,
             edgeIntensity: 0.5,
-            threshold: 0.3,
-            invert: true
+            threshold: 0.3
         };
     }
 }

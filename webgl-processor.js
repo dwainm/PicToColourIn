@@ -239,7 +239,6 @@ class WebGLProcessor {
         gl.uniform2f(program.uniforms.resolution, this.width, this.height);
         gl.uniform1f(program.uniforms.edgeIntensity, params.edgeIntensity);
         gl.uniform1f(program.uniforms.threshold, params.threshold);
-        gl.uniform1i(program.uniforms.invert, params.invert ? 1 : 0);
         
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
@@ -248,13 +247,12 @@ class WebGLProcessor {
         const {
             blurRadius = 2.0,
             edgeIntensity = 0.5,
-            threshold = 0.3,
-            invert = false
+            threshold = 0.3
         } = params;
         
         // Skip blur if radius is small
         if (blurRadius < 0.5) {
-            this.renderEdgePass(this.textures.source, { edgeIntensity, threshold, invert });
+            this.renderEdgePass(this.textures.source, { edgeIntensity, threshold });
             return;
         }
         
@@ -271,7 +269,7 @@ class WebGLProcessor {
         this.renderBlurPass(this.textures.blurTemp, this.framebuffers.blurResult, [0, 1], blurRadius);
         
         // Edge detection on blurred image
-        this.renderEdgePass(this.textures.blurResult, { edgeIntensity, threshold, invert });
+        this.renderEdgePass(this.textures.blurResult, { edgeIntensity, threshold });
     }
 
     ensureBlurResultTexture() {
@@ -350,7 +348,7 @@ const BLUR_FRAGMENT_SHADER = `
     }
 `;
 
-// Edge Detection Fragment Shader
+// Edge Detection Fragment Shader - Always outputs black lines on white background
 const EDGE_FRAGMENT_SHADER = `
     precision mediump float;
     varying vec2 v_texCoord;
@@ -359,7 +357,6 @@ const EDGE_FRAGMENT_SHADER = `
     uniform vec2 u_resolution;
     uniform float u_edgeIntensity;
     uniform float u_threshold;
-    uniform bool u_invert;
     
     float grayscale(vec4 color) {
         return dot(color.rgb, vec3(0.299, 0.587, 0.114));
@@ -386,7 +383,12 @@ const EDGE_FRAGMENT_SHADER = `
         // Apply intensity
         edge *= u_edgeIntensity * 4.0;
         
-        // Threshold
+        // Threshold - edge > threshold means we have a line (black), else white background
+        float result = edge > u_threshold ? 0.0 : 1.0;
+        
+        gl_FragColor = vec4(vec3(result), 1.0);
+    }
+`;
         float result = edge > u_threshold ? 1.0 : 0.0;
         
         // Invert if requested
