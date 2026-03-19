@@ -389,16 +389,6 @@ const EDGE_FRAGMENT_SHADER = `
         gl_FragColor = vec4(vec3(result), 1.0);
     }
 `;
-        float result = edge > u_threshold ? 1.0 : 0.0;
-        
-        // Invert if requested
-        if (u_invert) {
-            result = 1.0 - result;
-        }
-        
-        gl_FragColor = vec4(vec3(result), 1.0);
-    }
-`;
 
 // Expose to window
 if (typeof window !== 'undefined') {
