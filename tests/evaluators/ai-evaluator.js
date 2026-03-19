@@ -23,22 +23,21 @@ export class AIColoringEvaluator {
     const base64Image = imageBuffer.toString('base64');
 
     const criteriaPrompts = {
-      standard: `Evaluate this coloring book page image. Score each criterion 1-10:
+      standard: `Evaluate this photo-to-coloring-page conversion. This is ALGORITHMICALLY PROCESSED from a photo, not hand-drawn vector art. Score fairly for what automated edge detection can achieve. Score 1-10:
 
-1. LINE_CLARITY: Are outlines crisp, continuous, and clear? (no gaps, no fuzziness)
-2. DETAIL_BALANCE: Is there a good mix of simple and detailed areas? (not too cluttered, not too empty)
-3. RECOGNIZABILITY: Can you clearly identify what the subject is?
-4. COLORABILITY: Are regions well-defined and closed for coloring? (no open lines that bleed)
-5. PRINT_QUALITY: Would this look good printed on standard paper?
+1. LINE_CLARITY: Are the main outlines visible and continuous enough to color? (allow some algorithmic artifacts)
+2. DETAIL_BALANCE: Are key features recognizable with appropriate detail level for coloring?
+3. RECOGNIZABILITY: Can you identify the subject clearly despite processing artifacts?
+4. COLORABILITY: Are there enclosed regions suitable for filling with color? (some gaps OK)
+5. PRINT_QUALITY: Would a child enjoy coloring this, despite not being perfect vector art?
 
-IMPORTANT: Respond ONLY with valid JSON. No markdown, no explanations outside JSON, no code blocks.
-
+Respond ONLY with valid JSON:
 {
-  "LINE_CLARITY": {"score": 0, "reason": "brief explanation"},
-  "DETAIL_BALANCE": {"score": 0, "reason": "brief explanation"},
-  "RECOGNIZABILITY": {"score": 0, "reason": "brief explanation"},
-  "COLORABILITY": {"score": 0, "reason": "brief explanation"},
-  "PRINT_QUALITY": {"score": 0, "reason": "brief explanation"},
+  "LINE_CLARITY": {"score": 0, "reason": "brief note on main outlines"},
+  "DETAIL_BALANCE": {"score": 0, "reason": "brief note on feature recognition"},
+  "RECOGNIZABILITY": {"score": 0, "reason": "brief note on subject clarity"},
+  "COLORABILITY": {"score": 0, "reason": "brief note on fillable regions"},
+  "PRINT_QUALITY": {"score": 0, "reason": "brief note on usability"},
   "overall": 0,
   "suggestions": ["suggestion 1", "suggestion 2"]
 }`,
