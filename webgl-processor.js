@@ -99,7 +99,8 @@ class WebGLProcessor {
         const gl = this.gl;
         
         const positions = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]);
-        const texCoords = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
+        // Flip Y texture coordinates to correct upside-down image
+        const texCoords = new Float32Array([0, 1, 1, 1, 0, 0, 1, 0]);
         
         this.positionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);

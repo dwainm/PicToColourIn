@@ -8,10 +8,12 @@
 import { chromium } from 'playwright';
 import { AIColoringEvaluator } from './evaluators/ai-evaluator.js';
 import { mkdir, writeFile, readdir, unlink } from 'fs/promises';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const TEST_IMAGE = process.env.TEST_IMAGE || './tests/fixtures/sample.jpg';
-const OUTPUT_DIR = './tests/outputs';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const TEST_IMAGE = process.env.TEST_IMAGE || join(__dirname, 'fixtures', 'sample.jpg');
+const OUTPUT_DIR = join(__dirname, 'outputs');
 const PORT = 8888;
 
 // Parameter variants to test
@@ -24,23 +26,26 @@ const VARIANTS = [
 ];
 
 async function startServer() {
-  // Simple static file server
+  // Simple static file server - serve from parent directory (project root)
   const { createServer } = await import('http');
   const { readFile } = await import('fs/promises');
+  const { join: pathJoin } = await import('path');
+  
+  const rootDir = pathJoin(__dirname, '..'); // Serve from project root
   
   const server = createServer(async (req, res) => {
     const url = req.url === '/' ? '/index.html' : req.url;
-    const path = join('.', url);
+    const filePath = pathJoin(rootDir, url);
     
     try {
-      const content = await readFile(path);
-      const ext = path.split('.').pop();
-      const ct = { html: 'text/html', js: 'text/javascript', css: 'text/css', png: 'image/png', jpg: 'image/jpeg' }[ext] || 'text/plain';
+      const content = await readFile(filePath);
+      const ext = filePath.split('.').pop();
+      const ct = { html: 'text/html', js: 'text/javascript', css: 'text/css', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' }[ext] || 'text/plain';
       res.writeHead(200, { 'Content-Type': ct });
       res.end(content);
     } catch {
       res.writeHead(404);
-      res.end('Not found');
+      res.end('Not found: ' + url);
     }
   });
   
@@ -55,29 +60,45 @@ async function startServer() {
 async function renderVariant(browser, params, testImagePath) {
   const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
   
+  // Capture console errors
+  const errors = [];
+  page.on('console', msg => {
+    if (msg.type() === 'error') errors.push(msg.text());
+  });
+  page.on('pageerror', err => errors.push(err.message));
+  
   try {
     await page.goto(`http://localhost:${PORT}`);
+    await page.waitForLoadState('networkidle');
     
-    // Wait for app init
-    await page.waitForSelector('#outputCanvas', { timeout: 10000 });
+    // Upload test image
+    await page.locator('#fileInput').setInputFiles(testImagePath);
     
-    // Expose params setter
+    // Wait for editor section to become visible (not just canvas)
+    await page.waitForSelector('#editorSection', { 
+      state: 'visible',
+      timeout: 15000 
+    });
+    
+    // Wait for processing
+    await page.waitForTimeout(2000);
+    
+    if (errors.length > 0) {
+      throw new Error('JS errors: ' + errors.slice(0, 3).join('; '));
+    }
+    
+    // Set params
     await page.evaluate((p) => {
-      // Try to set params if the app exposes them
-      if (window.app && window.app.processor) {
-        window.app.blurSlider.value = p.blurRadius;
-        window.app.edgeSlider.value = p.edgeIntensity;
-        window.app.thresholdSlider.value = p.threshold;
-        window.app.onParamChange();
+      const app = window.app;
+      if (app) {
+        if (app.blurSlider) app.blurSlider.value = p.blurRadius;
+        if (app.edgeSlider) app.edgeSlider.value = p.edgeIntensity;
+        if (app.thresholdSlider) app.thresholdSlider.value = p.threshold;
+        if (app.onParamChange) app.onParamChange();
       }
     }, params);
     
-    // Upload test image
-    const input = await page.locator('#fileInput');
-    await input.setInputFiles(testImagePath);
-    
-    // Wait for processing
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
     
     // Screenshot the canvas
     const canvas = await page.locator('#outputCanvas');
@@ -88,6 +109,13 @@ async function renderVariant(browser, params, testImagePath) {
     return outputPath;
     
   } catch (err) {
+    // Debug screenshot on failure
+    const debugPath = join(OUTPUT_DIR, `debug-${params.label}.png`);
+    await page.screenshot({ path: debugPath, fullPage: true });
+    console.log(`   Debug screenshot: ${debugPath}`);
+    if (errors.length > 0) {
+      console.log(`   JS errors: ${errors.slice(0, 3).join(', ')}`);
+    }
     await page.close();
     throw err;
   }
@@ -121,7 +149,15 @@ async function main() {
   
   // Start server & browser
   const server = await startServer();
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ 
+    headless: true,
+    args: [
+      '--use-angle=swiftshader',  // Software WebGL
+      '--enable-unsafe-webgpu',
+      '--disable-web-security',
+      '--allow-file-access-from-files'
+    ]
+  });
   
   console.log(`🧪 Testing ${VARIANTS.length} parameter combinations...\n`);
   

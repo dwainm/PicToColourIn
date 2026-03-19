@@ -2,12 +2,28 @@
 node_modules/
 tests/node_modules/
 
-# Test outputs (don't deploy)
+# Build output (Cloudflare Pages deploys from here)
+dist/
+
+# Test outputs (large files, don't deploy)
 tests/outputs/
 tests/tuning-results/
 tests/fixtures/*.jpg
 tests/fixtures/*.png
-*.log
+
+# Local env files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Local env files
 .env

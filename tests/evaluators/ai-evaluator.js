@@ -15,7 +15,7 @@ export class AIColoringEvaluator {
     }
     this.apiKey = apiKey;
     this.baseUrl = 'https://api.fireworks.ai/inference/v1';
-    this.model = 'accounts/fireworks/models/kimi-k2'; // Kimi 2 on Fireworks
+    this.model = 'accounts/fireworks/routers/kimi-k2p5-turbo'; // Kimi 2.5 Turbo on Fireworks
   }
 
   async evaluate(imagePath, criteria = 'standard') {
