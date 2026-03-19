@@ -315,7 +315,7 @@ const VERTEX_SHADER = `
     }
 `;
 
-// Gaussian Blur Fragment Shader (separable)
+// Gaussian Blur Fragment Shader (separable) - fully unrolled for WebGL 1.0 compatibility
 const BLUR_FRAGMENT_SHADER = `
     precision mediump float;
     varying vec2 v_texCoord;
@@ -327,27 +327,25 @@ const BLUR_FRAGMENT_SHADER = `
     
     void main() {
         vec2 texelSize = 1.0 / u_resolution;
-        vec4 color = vec4(0.0);
-        float total = 0.0;
         
-        // Gaussian weights for kernel size 9
-        float weights[5];
-        weights[0] = 0.227027;
-        weights[1] = 0.1945946;
-        weights[2] = 0.1216216;
-        weights[3] = 0.054054;
-        weights[4] = 0.016216;
+        // Gaussian weights - kernel size 9 (5 unique weights, mirrored)
+        float w0 = 0.227027;
+        float w1 = 0.1945946;
+        float w2 = 0.1216216;
+        float w3 = 0.054054;
+        float w4 = 0.016216;
         
-        for (int i = -4; i <= 4; i++) {
-            float fi = float(i);
-            int idx = i < 0 ? -i : i;
-            float weight = weights[idx];
-            vec2 offset = u_direction * fi * u_radius * texelSize;
-            color += texture2D(u_sourceTexture, v_texCoord + offset) * weight;
-            total += weight;
-        }
+        vec4 color = texture2D(u_sourceTexture, v_texCoord) * w0;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * -1.0 * u_radius * texelSize) * w1;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * 1.0 * u_radius * texelSize) * w1;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * -2.0 * u_radius * texelSize) * w2;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * 2.0 * u_radius * texelSize) * w2;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * -3.0 * u_radius * texelSize) * w3;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * 3.0 * u_radius * texelSize) * w3;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * -4.0 * u_radius * texelSize) * w4;
+        color += texture2D(u_sourceTexture, v_texCoord + u_direction * 4.0 * u_radius * texelSize) * w4;
         
-        gl_FragColor = color / total;
+        gl_FragColor = color;
     }
 `;
 
