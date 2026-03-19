@@ -564,3 +564,50 @@ const CLOSE_FRAGMENT_SHADER = `
         gl_FragColor = vec4(vec3(result), 1.0);
     }
 `;
+
+// Bilateral filter shader - edge-preserving smoothing
+// Reduces texture noise while keeping edges sharp
+const BILATERAL_FRAGMENT_SHADER = `
+    precision mediump float;
+    varying vec2 v_texCoord;
+    
+    uniform sampler2D u_sourceTexture;
+    uniform vec2 u_resolution;
+    uniform float u_radius;
+    
+    float grayscale(vec4 color) {
+        return dot(color.rgb, vec3(0.299, 0.587, 0.114));
+    }
+    
+    void main() {
+        vec2 texelSize = 1.0 / u_resolution;
+        float centerGray = grayscale(texture2D(u_sourceTexture, v_texCoord));
+        
+        // Simple bilateral: weight by spatial distance AND intensity difference
+        float sum = 0.0;
+        float weightSum = 0.0;
+        
+        // Sample small neighborhood (3x3 for WebGL 1.0 compatibility)
+        for (float x = -1.0; x <= 1.0; x += 1.0) {
+            for (float y = -1.0; y <= 1.0; y += 1.0) {
+                vec2 offset = vec2(x, y) * u_radius * texelSize;
+                float sampleGray = grayscale(texture2D(u_sourceTexture, v_texCoord + offset));
+                
+                // Spatial weight (Gaussian)
+                float spatialDist = sqrt(x*x + y*y);
+                float spatialWeight = exp(-spatialDist * spatialDist / 2.0);
+                
+                // Intensity weight (bilateral - preserve edges)
+                float intensityDiff = abs(sampleGray - centerGray);
+                float intensityWeight = exp(-intensityDiff * intensityDiff * 10.0);
+                
+                float weight = spatialWeight * intensityWeight;
+                sum += sampleGray * weight;
+                weightSum += weight;
+            }
+        }
+        
+        float result = sum / weightSum;
+        gl_FragColor = vec4(vec3(result), 1.0);
+    }
+`;
