@@ -266,7 +266,7 @@ class WebGLProcessor {
         // Create a temporary texture for the fully blurred result
         this.ensureBlurResultTexture();
         
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers.blurResult);
+        this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffers.blurResult);
         this.renderBlurPass(this.textures.blurTemp, this.framebuffers.blurResult, [0, 1], blurRadius);
         
         // Edge detection on blurred image
