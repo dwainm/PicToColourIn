@@ -123,13 +123,14 @@ class WasmProcessor {
             edgeIntensity = 1.42,
             sigmaRatio = 3.6,
             closeRadius = 1,
-            outputMin = 0.2,   // Don't go to pure black
-            outputMax = 0.8    // Dark gray lines
+            outputMin = 0.2,
+            outputMax = 0.8
         } = params;
 
         // Extract dimensions
         const width = imageData.width || imageData.videoWidth || 800;
         const height = imageData.height || imageData.videoHeight || 600;
+        console.log('WASM processing input:', width, 'x', height, 'data length:', imageData.data.length);
 
         // Get RGBA data
         let rgbaData;
@@ -186,6 +187,7 @@ class WasmProcessor {
                 width,
                 height
             );
+            console.log('WASM output ImageData:', result.width, 'x', result.height, 'data length:', result.data.length);
 
             // Free WASM memory
             this.freeImageFn(outputPtr);

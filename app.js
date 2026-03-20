@@ -211,19 +211,26 @@ class ColoringApp {
         
         try {
             const ctx = this.sourceCanvas.getContext('2d');
+            console.log('Source canvas size:', this.sourceCanvas.width, 'x', this.sourceCanvas.height);
+            
             const imageData = ctx.getImageData(
                 0, 0, 
                 this.sourceCanvas.width, 
                 this.sourceCanvas.height
             );
+            console.log('ImageData size:', imageData.width, 'x', imageData.height, 'data length:', imageData.data.length);
             
             const startTime = performance.now();
             const result = await this.processor.process(imageData, this.processingParams);
+            console.log('Result ImageData size:', result.width, 'x', result.height, 'data length:', result.data.length);
+            
             const processTime = performance.now() - startTime;
             
             // Display result
             const outCtx = this.outputCanvas.getContext('2d');
+            console.log('Output canvas size before put:', this.outputCanvas.width, 'x', this.outputCanvas.height);
             outCtx.putImageData(result, 0, 0);
+            console.log('Result displayed');
             
             this.hideLoadingOverPhoto();
             
