@@ -83,7 +83,7 @@ export class AIColoringEvaluator {
       body: JSON.stringify({
         model: this.model,
         messages: messages,
-        max_tokens: 100,
+        max_tokens: 500,
         temperature: 0.3
       })
     });
@@ -95,6 +95,9 @@ export class AIColoringEvaluator {
 
     const data = await response.json();
     const text = data.choices[0].message.content;
+    
+    // Debug: log raw response
+    console.log('  🤖 AI raw:', text.substring(0, 150).replace(/\n/g, ' '));
 
     // Extract first number from response (simple format: "7 - reason")
     const numberMatch = text.match(/(\d+)/);
