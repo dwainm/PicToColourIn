@@ -84,26 +84,17 @@ class WasmProcessor {
             
             console.log('HEAP available, length:', heap.length);
             
-            // Wrap C functions for easy calling
+            // Wrap C functions - using obfuscated names to hide implementation
             console.log('Wrapping C functions...');
-            this.processImageFn = this.module.cwrap('processImage', 'number', [
-                'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
-            ]);
-            console.log('processImage wrapped:', !!this.processImageFn);
+            this.processFn = this.module._x9;  // x9 = process
+            this.freeFn = this.module._y2;     // y2 = free  
+            this.estimateFn = this.module._z3;   // z3 = estimate
             
-            // Adaptive threshold function (OpenCV-style) - PRODUCTION DEFAULT
-            // Use direct reference (faster than cwrap anyway)
-            this.processImageAdaptiveFn = this.module._processImageAdaptive;
-            console.log('processImageAdaptive direct:', !!this.processImageAdaptiveFn);
-            
-            this.freeImageFn = this.module.cwrap('freeProcessedImage', null, ['number']);
-            this.estimateTimeFn = this.module.cwrap('estimateProcessingTime', 'number', ['number', 'number']);
-            
-            // DEBUG: Check what's actually exported
-            console.log('Module keys:', Object.keys(this.module).filter(k => k.includes('process')));
-            
-            this.freeImageFn = this.module.cwrap('freeProcessedImage', null, ['number']);
-            this.estimateTimeFn = this.module.cwrap('estimateProcessingTime', 'number', ['number', 'number']);
+            console.log('Functions bound:', {
+                process: !!this.processFn,
+                free: !!this.freeFn,
+                estimate: !!this.estimateFn
+            });
             
             this.isReady = true;
             console.log('✓ WASM processor initialized');
@@ -178,11 +169,11 @@ class WasmProcessor {
             // Call WASM function - adaptive threshold (OpenCV-style)
             const startTime = performance.now();
             
-            if (!this.processImageAdaptiveFn) {
-                throw new Error('processImageAdaptive not available in WASM module. Check build.');
+            if (!this.processFn) {
+                throw new Error('WASM process function not available. Check build.');
             }
             
-            const outputPtr = this.processImageAdaptiveFn(
+            const outputPtr = this.processFn(
                 inputPtr,
                 width,
                 height,
@@ -212,7 +203,7 @@ class WasmProcessor {
             console.log('WASM output ImageData:', result.width, 'x', result.height, 'data length:', result.data.length);
 
             // Free WASM memory
-            this.freeImageFn(outputPtr);
+            this.freeFn(outputPtr);
 
             return result;
 
@@ -226,11 +217,11 @@ class WasmProcessor {
      * Estimate processing time in milliseconds
      */
     estimateTime(width, height) {
-        if (!this.estimateTimeFn) {
+        if (!this.estimateFn) {
             // Rough estimate
-            return (width * height / 1000000) * 50 + 100;
+            return (width * height / 1000000) * 30 + 50;
         }
-        return this.estimateTimeFn(width, height);
+        return this.estimateFn(width, height);
     }
 }
 
