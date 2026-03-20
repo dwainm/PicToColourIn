@@ -47,12 +47,20 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - verify 8/10 winner
+// Parameter variants - simple DoG without hysteresis (better visual quality)
 const VARIANTS = [
-  // 8/10 winner from previous run
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'verify-8' },
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'verify-8-b' },
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'verify-8-c' },
+  // Original 7/10 baseline - clean DoG only
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'clean-7-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'clean-7-5.8' },
+  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'clean-7.2-5.5' },
+  
+  // Higher intensity for stronger edges
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'clean-7-6' },
+  { blurRadius: 7.5, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'clean-7.5-6' },
+  
+  // Tighter sigma ratio for sharper edges
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.3, closeRadius: 0, label: 'clean-sigma-1.3' },
+  { blurRadius: 6.5, edgeIntensity: 5.5, sigmaRatio: 1.4, closeRadius: 0, label: 'clean-6.5-5.5' },
 ];
 
 async function compileNative() {
