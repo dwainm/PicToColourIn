@@ -624,4 +624,5 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { WebGLProcessor };
 }
 
-export { WebGLProcessor };
+// Note: For ES module usage, import directly: import { WebGLProcessor } from './webgl-processor.js'
+// This file uses global script pattern for browser compatibility
