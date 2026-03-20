@@ -5,7 +5,7 @@
 EMCC = emcc
 OPTIMIZATION = -O3
 EXPORTED_FUNCTIONS = -s EXPORTED_FUNCTIONS="['_processImage', '_freeProcessedImage', '_malloc', '_free', '_estimateProcessingTime']"
-EXPORTED_RUNTIME = -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'setValue', 'UTF8ToString', 'stringToUTF8']"
+EXPORTED_RUNTIME = -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'setValue', 'UTF8ToString', 'stringToUTF8', 'HEAP8', 'HEAPU8']"
 
 # Build settings
 WASM_FLAGS = \
