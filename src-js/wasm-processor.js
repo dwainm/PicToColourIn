@@ -89,11 +89,27 @@ class WasmProcessor {
             this.processImageFn = this.module.cwrap('processImage', 'number', [
                 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
             ]);
+            console.log('processImage wrapped:', !!this.processImageFn);
             
             // Adaptive threshold function (OpenCV-style) - PRODUCTION DEFAULT
-            this.processImageAdaptiveFn = this.module.cwrap('processImageAdaptive', 'number', [
+            // Try both with and without underscore
+            this.processImageAdaptiveFn = this.module.cwrap('_processImageAdaptive', 'number', [
                 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
             ]);
+            if (!this.processImageAdaptiveFn) {
+                this.processImageAdaptiveFn = this.module.cwrap('processImageAdaptive', 'number', [
+                    'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
+                ]);
+            }
+            // Direct fallback: use the exported function directly
+            if (!this.processImageAdaptiveFn && this.module._processImageAdaptive) {
+                console.log('Using direct _processImageAdaptive reference');
+                this.processImageAdaptiveFn = this.module._processImageAdaptive;
+            }
+            console.log('processImageAdaptive wrapped:', !!this.processImageAdaptiveFn);
+            
+            // DEBUG: Check what's actually exported
+            console.log('Module keys:', Object.keys(this.module).filter(k => k.includes('process')));
             
             this.freeImageFn = this.module.cwrap('freeProcessedImage', null, ['number']);
             this.estimateTimeFn = this.module.cwrap('estimateProcessingTime', 'number', ['number', 'number']);
@@ -170,6 +186,10 @@ class WasmProcessor {
 
             // Call WASM function - adaptive threshold (OpenCV-style)
             const startTime = performance.now();
+            
+            if (!this.processImageAdaptiveFn) {
+                throw new Error('processImageAdaptive not available in WASM module. Check build.');
+            }
             
             const outputPtr = this.processImageAdaptiveFn(
                 inputPtr,
