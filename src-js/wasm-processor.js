@@ -85,16 +85,25 @@ class WasmProcessor {
             
             console.log('HEAP available, length:', heap.length);
             
-            // Wrap C functions - using obfuscated names to hide implementation
+            // Wrap C functions - direct calls with proper float handling
             console.log('Wrapping C functions...');
-            // Use ccall for proper type marshalling (especially floats)
+            
+            // Direct call - set up stack for floats manually
             this.processFn = (ptr, w, h, windowSize, c, method, outMin, outMax) => {
-                return this.module.ccall('x9', 'number', 
+                // Log exact values before call
+                console.log('x9 INPUT:', {ptr, w, h, windowSize, c, method, outMin, outMax});
+                
+                // Use ccall with explicit float params
+                const result = this.module.ccall('x9', 'number',
                     ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
                     [ptr, w, h, windowSize, c, method, outMin, outMax]
                 );
+                
+                console.log('x9 OUTPUT ptr:', result);
+                return result;
             };
-            this.freeFn = (ptr) => this.module._free(ptr);  // Use built-in _free
+            
+            this.freeFn = (ptr) => this.module._free(ptr);
             this.estimateFn = (w, h) => this.module._z3(w, h);
             
             console.log('Functions bound:', {
