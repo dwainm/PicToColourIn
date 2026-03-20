@@ -48,8 +48,17 @@ async function startServer() {
     try {
       const content = await readFile(filePath);
       const ext = filePath.split('.').pop();
-      const ct = { html: 'text/html', js: 'text/javascript', css: 'text/css', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' }[ext] || 'text/plain';
-      res.writeHead(200, { 'Content-Type': ct });
+      const ct = { html: 'text/html', js: 'text/javascript', css: 'text/css', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', wasm: 'application/wasm' }[ext] || 'text/plain';
+      
+      // CORS headers required for ES modules and WASM
+      const headers = {
+        'Content-Type': ct,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      };
+      
+      res.writeHead(200, headers);
       res.end(content);
     } catch {
       res.writeHead(404);
