@@ -78,6 +78,11 @@ export class AIColoringEvaluator {
       text: criteriaPrompts[criteria] || criteriaPrompts.standard
     });
 
+    // Debug: log what we're sending
+    console.log('  📤 Sending', originalBase64 ? '2' : '1', 'images + prompt');
+    const promptText = criteriaPrompts[criteria] || criteriaPrompts.standard;
+    console.log('  📝 Prompt:', promptText.substring(0, 80) + '...');
+
     // Make API request
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',

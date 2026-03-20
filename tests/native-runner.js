@@ -47,12 +47,8 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - aggressive ranges to find working sweet spot
+// Parameter variants - just test one with debug
 const VARIANTS = [
-  { blurRadius: 3, edgeIntensity: 2, sigmaRatio: 2, closeRadius: 0, label: 'aggr-a' },
-  { blurRadius: 4, edgeIntensity: 3, sigmaRatio: 2, closeRadius: 0, label: 'aggr-b' },
-  { blurRadius: 5, edgeIntensity: 4, sigmaRatio: 2, closeRadius: 1, label: 'aggr-c' },
-  { blurRadius: 6, edgeIntensity: 5, sigmaRatio: 2, closeRadius: 1, label: 'aggr-d' },
   { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'aggr-e' },
 ];
 
