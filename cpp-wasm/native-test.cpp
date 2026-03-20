@@ -82,16 +82,27 @@ int main(int argc, char* argv[]) {
     }
     
     std::cerr << "Processing " << width << "x" << height << " with " 
-              << "blur=" << blurSigma << ", intensity=" << edgeIntensity << "\n";
+              << "blur=" << blurSigma << ", intensity=" << edgeIntensity << ", sigmaRatio=" << sigmaRatio << "\n";
+    
+    // Debug: also output raw DoG
+    imgproc::Image debugDog;
     
     // Process
     imgproc::Image result = imgproc::processToColoringPage(
         rgba.data(), width, height,
         blurSigma, edgeIntensity, sigmaRatio,
-        closeRadius, 0.0f, 1.0f  // full black/white range
+        closeRadius, 0.0f, 1.0f,  // full black/white range
+        &debugDog  // Get debug output
     );
     
-    // Write output
+    // Write debug DoG output (before inversion)
+    std::string dogPath = std::string(outputPath);
+    dogPath = dogPath.substr(0, dogPath.find_last_of('.')) + "-dog.ppm";
+    if (writePPM(dogPath.c_str(), debugDog.data.data(), width, height)) {
+        std::cerr << "Debug DoG: " << dogPath << "\n";
+    }
+    
+    // Write final output
     if (!writePPM(outputPath, result.data.data(), width, height)) {
         std::cerr << "Failed to write: " << outputPath << "\n";
         return 1;

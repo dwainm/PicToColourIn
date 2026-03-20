@@ -218,7 +218,8 @@ Image processToColoringPage(
     float sigmaRatio,
     int closeRadius,
     float outputMin,
-    float outputMax
+    float outputMax,
+    Image* debugDogOut = nullptr  // Optional: output raw DoG for debugging
 ) {
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
@@ -227,6 +228,11 @@ Image processToColoringPage(
     float sigmaSmall = blurSigma / sigmaRatio;
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
+    
+    // Debug: return raw DoG if requested
+    if (debugDogOut) {
+        *debugDogOut = dog;
+    }
     
     // Step 3: Morphological closing (connect broken lines)
     if (closeRadius > 0) {
