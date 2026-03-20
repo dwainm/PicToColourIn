@@ -47,12 +47,16 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - pure DoG (best visual quality)
+// Parameter variants - test adaptive threshold vs DoG
 const VARIANTS = [
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7-5.5' },
-  { blurRadius: 7.1, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7.1-5.5' },
-  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7.2-5.5' },
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7-5.8' },
+  // Adaptive threshold: windowSize, c, blurSigma, closeRadius
+  { type: 'adaptive', windowSize: 15, c: 5, blurSigma: 1, closeRadius: 1, label: 'adaptive-15-5' },
+  { type: 'adaptive', windowSize: 21, c: 7, blurSigma: 1, closeRadius: 1, label: 'adaptive-21-7' },
+  { type: 'adaptive', windowSize: 15, c: 3, blurSigma: 2, closeRadius: 1, label: 'adaptive-15-3-blur2' },
+  { type: 'adaptive', windowSize: 25, c: 10, blurSigma: 0, closeRadius: 2, label: 'adaptive-25-10' },
+  
+  // Baseline DoG for comparison
+  { type: 'dog', blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'dog-7-5.5' },
 ];
 
 async function compileNative() {
@@ -83,16 +87,31 @@ async function compileNative() {
 
 async function runNativeProcess(inputPath, outputPath, params) {
   return new Promise((resolve, reject) => {
-    const args = [
-      inputPath,
-      outputPath,
-      params.blurRadius.toString(),
-      params.edgeIntensity.toString(),
-      params.sigmaRatio.toString(),
-      params.closeRadius.toString(),
-      (params.bilateralSpatial || 0).toString(),
-      (params.bilateralIntensity || 30).toString()
-    ];
+    let args;
+    
+    if (params.type === 'adaptive') {
+      // Adaptive threshold mode
+      args = [
+        'adaptive',
+        inputPath,
+        outputPath,
+        params.windowSize.toString(),
+        params.c.toString(),
+        params.blurSigma.toString(),
+        params.closeRadius.toString()
+      ];
+    } else {
+      // DoG mode (default)
+      args = [
+        'dog',
+        inputPath,
+        outputPath,
+        params.blurRadius.toString(),
+        params.edgeIntensity.toString(),
+        params.sigmaRatio.toString(),
+        params.closeRadius.toString()
+      ];
+    }
     
     const proc = spawn(join(OUTPUT_DIR, 'native-test'), args);
     

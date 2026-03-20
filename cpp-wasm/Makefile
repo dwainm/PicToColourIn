@@ -60,10 +60,20 @@ debug:
 	@echo "✓ Debug build complete"
 
 clean:
-	rm -f $(OUTPUT) ../src-js/imgproc-wasm.wasm
+	rm -f $(OUTPUT) ../src-js/imgproc-wasm.wasm native-test edge-test
 	@echo "Cleaned build files"
 
 # Check for Emscripten
 verify:
 	@which $(EMCC) > /dev/null 2>&1 || (echo "Error: Emscripten not found. Install: https://emscripten.org/docs/getting_started/downloads.html" && exit 1)
 	@echo "Emscripten found: $(shell $(EMCC) --version | head -1)"
+
+# Native test runner (for local testing)
+native-test: mini_imgproc.cpp native-test.cpp mini_imgproc.h
+	g++ -O3 $(INCLUDES) mini_imgproc.cpp native-test.cpp -o native-test
+	@echo "✓ Built native test runner"
+
+# Raw edge detection test
+edge-test: mini_imgproc.cpp edge-test.cpp mini_imgproc.h
+	g++ -O3 $(INCLUDES) mini_imgproc.cpp edge-test.cpp -o edge-test
+	@echo "✓ Built edge detection test"

@@ -11,6 +11,11 @@ namespace imgproc {
 
 // Forward declarations
 Image colorEdgeLab(const uint8_t* rgba, int width, int height, float chromaWeight);
+Image processToColoringPageAdaptive(
+    const uint8_t* rgbaIn, int width, int height,
+    int windowSize, float c, float blurSigma, int closeRadius,
+    float outputMin, float outputMax
+);
 
 Image rgbToGray(const uint8_t* rgba, int width, int height) {
     Image gray(width, height);
@@ -468,6 +473,53 @@ Image processToColoringPage(
         // Invert: high edge = dark
         float inverted = 255.0f - dog.data[i];
         // Scale to output range
+        float scaled = minOut + (inverted / 255.0f) * outRange;
+        result.data[i] = static_cast<uint8_t>(std::min(255.0f, std::max(0.0f, scaled)));
+    }
+    
+    return result;
+}
+
+// NEW: Adaptive threshold pipeline - creates filled regions instead of edges
+// Compares each pixel to neighborhood average - perfect for coloring books!
+Image processToColoringPageAdaptive(
+    const uint8_t* rgbaIn,
+    int width,
+    int height,
+    int windowSize,      // Neighborhood size (e.g., 15 for 15x15 window)
+    float c,             // Constant subtracted from mean (higher = more edges)
+    float blurSigma,     // Pre-blur to reduce noise (0 to disable)
+    int closeRadius,     // Morphological closing to connect regions
+    float outputMin,     // 0.0 for white
+    float outputMax      // 1.0 for black
+) {
+    // Step 1: Convert to grayscale
+    Image gray = rgbToGray(rgbaIn, width, height);
+    
+    // Step 2: Optional pre-blur to reduce noise
+    if (blurSigma > 0.5f) {
+        gray = gaussianBlur(gray, blurSigma);
+    }
+    
+    // Step 3: Adaptive threshold - MAGIC HAPPENS HERE
+    // Each pixel compared to local neighborhood mean
+    Image thresh = adaptiveThreshold(gray, windowSize, c);
+    
+    // Step 4: Morphological closing to connect small gaps
+    if (closeRadius > 0) {
+        thresh = morphologicalClose(thresh, closeRadius);
+    }
+    
+    // Step 5: Invert so regions are white (to color) and boundaries are black
+    // Also scale to output range
+    Image result(width, height);
+    float minOut = outputMin * 255.0f;
+    float maxOut = outputMax * 255.0f;
+    float outRange = maxOut - minOut;
+    
+    for (int i = 0; i < width * height; ++i) {
+        // thresh is 0 or 255; invert so edges (threshold crossings) are dark
+        float inverted = 255.0f - thresh.data[i];
         float scaled = minOut + (inverted / 255.0f) * outRange;
         result.data[i] = static_cast<uint8_t>(std::min(255.0f, std::max(0.0f, scaled)));
     }

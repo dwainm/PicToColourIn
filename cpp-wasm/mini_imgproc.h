@@ -82,7 +82,7 @@ Image hysteresisThreshold(const Image& src, uint8_t lowThresh, uint8_t highThres
 // Contrast stretching
 Image stretchContrast(const Image& src, float lowPercentile, float highPercentile);
 
-// Main pipeline: RGBA -> processed grayscale
+// Main pipeline: RGBA -> processed grayscale (DoG-based)
 Image processToColoringPage(
     const uint8_t* rgbaIn,
     int width,
@@ -96,6 +96,19 @@ Image processToColoringPage(
     Image* debugDogOut = nullptr,  // optional: output raw DoG for debugging
     float bilateralSpatial = 2.0f,   // bilateral spatial sigma (0 to disable)
     float bilateralIntensity = 30.0f // bilateral intensity sigma
+);
+
+// NEW: Adaptive threshold pipeline - creates filled regions instead of edges
+Image processToColoringPageAdaptive(
+    const uint8_t* rgbaIn,
+    int width,
+    int height,
+    int windowSize,      // Neighborhood size (e.g., 15 for 15x15 window)
+    float c,             // Constant subtracted from mean (higher = more edges)
+    float blurSigma,     // Pre-blur to reduce noise (0 to disable)
+    int closeRadius,     // Morphological closing to connect regions
+    float outputMin,     // 0.0 for white
+    float outputMax      // 1.0 for black
 );
 
 } // namespace imgproc

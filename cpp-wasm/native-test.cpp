@@ -59,49 +59,100 @@ bool writePPM(const char* filename, const uint8_t* gray, int width, int height) 
 }
 
 // Simple stub for command-line usage
+// Usage: native-test <mode> <input.ppm> <output.ppm> [params...]
+// Modes:
+//   dog <blurSigma> <edgeIntensity> <sigmaRatio> <closeRadius>
+//   adaptive <windowSize> <c> <blurSigma> <closeRadius>
 int main(int argc, char* argv[]) {
-    if (argc < 7) {
-        std::cerr << "Usage: " << argv[0] << " <input.ppm> <output.ppm> <blurSigma> <edgeIntensity> <sigmaRatio> <closeRadius> [bilateralSpatial] [bilateralIntensity]\n";
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <mode> <input.ppm> <output.ppm> [params...]\n"
+                  << "Modes:\n"
+                  << "  dog <blurSigma> <edgeIntensity> <sigmaRatio> <closeRadius>\n"
+                  << "  adaptive <windowSize> <c> <blurSigma> <closeRadius>\n";
         return 1;
     }
     
-    const char* inputPath = argv[1];
-    const char* outputPath = argv[2];
-    float blurSigma = std::stof(argv[3]);
-    float edgeIntensity = std::stof(argv[4]);
-    float sigmaRatio = std::stof(argv[5]);
-    int closeRadius = std::stoi(argv[6]);
-    float bilateralSpatial = (argc > 7) ? std::stof(argv[7]) : 0.0f;
-    float bilateralIntensity = (argc > 8) ? std::stof(argv[8]) : 30.0f;
+    const char* mode = argv[1];
     
-    // Read input
-    std::vector<uint8_t> rgba;
-    int width, height;
-    
-    if (!readPPM(inputPath, rgba, width, height)) {
-        std::cerr << "Failed to read: " << inputPath << "\n";
+    if (strcmp(mode, "dog") == 0) {
+        if (argc < 7) {
+            std::cerr << "dog mode needs: input.ppm output.ppm blurSigma edgeIntensity sigmaRatio closeRadius\n";
+            return 1;
+        }
+        const char* inputPath = argv[2];
+        const char* outputPath = argv[3];
+        float blurSigma = std::stof(argv[4]);
+        float edgeIntensity = std::stof(argv[5]);
+        float sigmaRatio = std::stof(argv[6]);
+        int closeRadius = std::stoi(argv[7]);
+        
+        // Read input
+        std::vector<uint8_t> rgba;
+        int width, height;
+        if (!readPPM(inputPath, rgba, width, height)) {
+            std::cerr << "Failed to read: " << inputPath << "\n";
+            return 1;
+        }
+        
+        std::cerr << "[DoG] Processing " << width << "x" << height 
+                  << " blur=" << blurSigma << " intensity=" << edgeIntensity << "\n";
+        
+        // Process with DoG
+        imgproc::Image result = imgproc::processToColoringPage(
+            rgba.data(), width, height,
+            blurSigma, edgeIntensity, sigmaRatio,
+            closeRadius, 0.0f, 1.0f,
+            nullptr, 0.0f, 30.0f
+        );
+        
+        // Write output
+        if (!writePPM(outputPath, result.data.data(), width, height)) {
+            std::cerr << "Failed to write: " << outputPath << "\n";
+            return 1;
+        }
+        std::cerr << "Wrote: " << outputPath << "\n";
+        
+    } else if (strcmp(mode, "adaptive") == 0) {
+        if (argc < 7) {
+            std::cerr << "adaptive mode needs: input.ppm output.ppm windowSize c blurSigma closeRadius\n";
+            return 1;
+        }
+        const char* inputPath = argv[2];
+        const char* outputPath = argv[3];
+        int windowSize = std::stoi(argv[4]);
+        float c = std::stof(argv[5]);
+        float blurSigma = std::stof(argv[6]);
+        int closeRadius = std::stoi(argv[7]);
+        
+        // Read input
+        std::vector<uint8_t> rgba;
+        int width, height;
+        if (!readPPM(inputPath, rgba, width, height)) {
+            std::cerr << "Failed to read: " << inputPath << "\n";
+            return 1;
+        }
+        
+        std::cerr << "[Adaptive] Processing " << width << "x" << height 
+                  << " window=" << windowSize << " c=" << c << "\n";
+        
+        // Process with adaptive threshold
+        imgproc::Image result = imgproc::processToColoringPageAdaptive(
+            rgba.data(), width, height,
+            windowSize, c, blurSigma, closeRadius,
+            0.0f, 1.0f
+        );
+        
+        // Write output
+        if (!writePPM(outputPath, result.data.data(), width, height)) {
+            std::cerr << "Failed to write: " << outputPath << "\n";
+            return 1;
+        }
+        std::cerr << "Wrote: " << outputPath << "\n";
+        
+    } else {
+        std::cerr << "Unknown mode: " << mode << "\n";
         return 1;
     }
     
-    std::cerr << "Processing " << width << "x" << height << " with " 
-              << "blur=" << blurSigma << ", intensity=" << edgeIntensity 
-              << ", sigmaRatio=" << sigmaRatio << ", bilateral=" << bilateralSpatial << "/" << bilateralIntensity << "\n";
-    
-    // Process - skip debug output to avoid dark images
-    imgproc::Image result = imgproc::processToColoringPage(
-        rgba.data(), width, height,
-        blurSigma, edgeIntensity, sigmaRatio,
-        closeRadius, 0.0f, 1.0f,  // full black/white range
-        nullptr,  // No debug output
-        bilateralSpatial, bilateralIntensity
-    );
-    
-    // Write final output (no debug DoG - keeps output clean)
-    if (!writePPM(outputPath, result.data.data(), width, height)) {
-        std::cerr << "Failed to write: " << outputPath << "\n";
-        return 1;
-    }
-    
-    std::cerr << "Wrote: " << outputPath << "\n";
     return 0;
 }
