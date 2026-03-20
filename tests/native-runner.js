@@ -47,13 +47,13 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - soft thresholding for cleaner edges
+// Parameter variants - test color-aware edge detection
 const VARIANTS = [
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'soft-7-5.5' },
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'soft-7-6' },
-  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'soft-7.5-5.5' },
-  { blurRadius: 7.5, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'soft-7.5-6' },
-  { blurRadius: 8, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'soft-8-5.5' },
+  // Color-aware edges (30% color, 70% luminance)
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7-5.5' },
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7-6' },
+  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7.5-5.5' },
+  { blurRadius: 6.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'color-6.5-5.5' },
 ];
 
 async function compileNative() {

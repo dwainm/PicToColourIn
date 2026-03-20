@@ -61,6 +61,9 @@ Image bilateralFilter(const Image& src, float spatialSigma, float intensitySigma
 // Non-maximum suppression for edge thinning
 Image nonMaxSuppress(const Image& src);
 
+// Color-aware edge detection (detects hue/saturation changes)
+Image colorEdgeMagnitude(const uint8_t* rgba, int width, int height, float colorWeight);
+
 // Median filter for noise removal
 Image medianFilter(const Image& src, int radius);
 

@@ -437,23 +437,17 @@ Image processToColoringPage(
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
     
-    // Step 2: Difference of Gaussians
+    // Step 2: Difference of Gaussians (luminance edges)
     float sigmaSmall = blurSigma / sigmaRatio;
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
     
-    // Step 2.5: Soft thresholding - reduce gray tones while keeping some gradient
+    // Step 2.5: Color-aware edges (detects hue/saturation changes)
+    // Blend with grayscale DoG: 70% luminance, 30% color edges
+    Image colorEdges = colorEdgeMagnitude(rgbaIn, width, height, 0.3f);
     for (int i = 0; i < width * height; ++i) {
-        uint8_t val = dog.data[i];
-        // Boost mid-tones toward white, keep strong edges dark
-        if (val < 30) {
-            dog.data[i] = 0;  // Strong edge -> black
-        } else if (val > 150) {
-            dog.data[i] = 255;  // Background -> white  
-        } else {
-            // Soft transition for mid-tones
-            dog.data[i] = static_cast<uint8_t>(255 - ((255 - val) * 1.5f));
-        }
+        float blended = 0.7f * dog.data[i] + 0.3f * colorEdges.data[i];
+        dog.data[i] = static_cast<uint8_t>(std::min(255.0f, blended * edgeIntensity));
     }
     
     // Debug: return raw DoG if requested
@@ -485,4 +479,45 @@ Image processToColoringPage(
     return result;
 }
 
-} // namespace imgproc
+// Color-aware edge detection - detects changes in hue/saturation, not just brightness
+Image colorEdgeMagnitude(const uint8_t* rgba, int width, int height, float colorWeight) {
+    Image result(width, height);
+    
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int idx = (y * width + x) * 4;
+            float r = rgba[idx];
+            float g = rgba[idx + 1];
+            float b = rgba[idx + 2];
+            
+            // Compare with right neighbor
+            int idxR = (y * width + std::min(x + 1, width - 1)) * 4;
+            float rR = rgba[idxR];
+            float gR = rgba[idxR + 1];
+            float bR = rgba[idxR + 2];
+            
+            // Compare with bottom neighbor
+            int idxB = (std::min(y + 1, height - 1) * width + x) * 4;
+            float rB = rgba[idxB];
+            float gB = rgba[idxB + 1];
+            float bB = rgba[idxB + 2];
+            
+            // Color difference (Euclidean distance in RGB)
+            float diffR = std::sqrt((r-rR)*(r-rR) + (g-gR)*(g-gR) + (b-bR)*(b-bR));
+            float diffB = std::sqrt((r-rB)*(r-rB) + (g-gB)*(g-gB) + (b-bB)*(b-bB));
+            float colorDiff = std::max(diffR, diffB);
+            
+            // Luminance difference
+            float lum = 0.299f * r + 0.587f * g + 0.114f * b;
+            float lumR = 0.299f * rR + 0.587f * gR + 0.114f * bR;
+            float lumB = 0.299f * rB + 0.587f * gB + 0.114f * bB;
+            float lumDiff = std::max(std::abs(lum - lumR), std::abs(lum - lumB));
+            
+            // Combined: color-aware edges
+            float combined = lumDiff + colorWeight * colorDiff / 3.0f;  // /3 because RGB diff is 0-441
+            result.at(x, y) = static_cast<uint8_t>(std::min(255.0f, combined * 2.0f));
+        }
+    }
+    
+    return result;
+}
