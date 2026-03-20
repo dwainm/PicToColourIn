@@ -47,9 +47,13 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - just test one with debug
+// Parameter variants - test range to find best
 const VARIANTS = [
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'aggr-e' },
+  { blurRadius: 6, edgeIntensity: 4, sigmaRatio: 2, closeRadius: 0, label: 'mid-a' },
+  { blurRadius: 7, edgeIntensity: 5, sigmaRatio: 2, closeRadius: 0, label: 'mid-b' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'mid-c' },
+  { blurRadius: 9, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 1, label: 'mid-d' },
+  { blurRadius: 10, edgeIntensity: 8, sigmaRatio: 1.5, closeRadius: 1, label: 'mid-e' },
 ];
 
 async function compileNative() {
