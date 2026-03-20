@@ -464,8 +464,8 @@ Image processToColoringPage(
     }
     
     // Step 3.5: Remove small speckles/isolated edges (noise reduction)
-    // minSize=20 removes tiny texture speckles while keeping real edges
-    dog = removeSmallComponents(dog, 20);
+    // minSize=10 removes tiny texture speckles while keeping real edges
+    dog = removeSmallComponents(dog, 10);
     
     // Step 4: Invert and scale to output range
     // DoG gives us edges as bright values - invert so edges are dark
