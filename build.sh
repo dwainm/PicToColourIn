@@ -31,19 +31,22 @@ cp processing-queue.js dist/
 cp styles.css dist/
 cp ads.txt dist/
 
-# Copy WASM files if they exist
+# Copy WASM files to both dist/ and root (for tests)
 if [ -f "src-js/wasm-processor.js" ]; then
     cp src-js/wasm-processor.js dist/
+    cp src-js/wasm-processor.js .
     echo "✓ Copied wasm-processor.js"
 fi
 
 if [ -f "src-js/imgproc-wasm.js" ]; then
     cp src-js/imgproc-wasm.js dist/
+    cp src-js/imgproc-wasm.js .
     echo "✓ Copied imgproc-wasm.js"
 fi
 
 if [ -f "src-js/imgproc-wasm.wasm" ]; then
     cp src-js/imgproc-wasm.wasm dist/
+    cp src-js/imgproc-wasm.wasm .
     echo "✓ Copied imgproc-wasm.wasm"
 fi
 
