@@ -18,19 +18,19 @@ class WasmProcessor {
         try {
             // Dynamic import of WASM module
             const wasmModule = await import('./imgproc-wasm.js');
-            this.module = await wasmModule.default();
+            const ModuleFactory = wasmModule.default;
+            
+            // Initialize the module (this loads and instantiates the WASM)
+            this.module = await ModuleFactory();
+            
+            // Wait a tick for HEAP to be set up
+            if (!this.module.HEAP8) {
+                await new Promise(r => setTimeout(r, 0));
+            }
             
             // Wrap C functions for easy calling
             this.processImageFn = this.module.cwrap('processImage', 'number', [
-                'number',  // rgbaIn pointer
-                'number',  // width
-                'number',  // height
-                'number',  // blurSigma
-                'number',  // edgeIntensity
-                'number',  // sigmaRatio
-                'number',  // closeRadius
-                'number',  // outputMin
-                'number'   // outputMax
+                'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
             ]);
             
             this.freeImageFn = this.module.cwrap('freeProcessedImage', null, ['number']);
@@ -40,12 +40,14 @@ class WasmProcessor {
             console.log('✓ WASM processor initialized');
             
             // Log estimated memory
-            console.log(`WASM memory: ${this.module.HEAP8.length / 1024 / 1024}MB initial`);
+            if (this.module.HEAP8) {
+                console.log(`WASM memory: ${this.module.HEAP8.length / 1024 / 1024}MB initial`);
+            }
             
         } catch (err) {
-            console.warn('WASM load failed, falling back to WebGL:', err);
+            console.warn('WASM load failed:', err);
             this.fallbackMode = true;
-            this.isReady = true;  // Ready in fallback mode
+            this.isReady = false;  // Not ready if WASM failed
         }
     }
 
@@ -145,39 +147,11 @@ class WasmProcessor {
      * Estimate processing time in milliseconds
      */
     estimateTime(width, height) {
-        if (this.fallbackMode || !this.estimateTimeFn) {
-            // Rough estimate for WebGL
-            return (width * height / 1000000) * 30 + 50;
+        if (!this.estimateTimeFn) {
+            // Rough estimate
+            return (width * height / 1000000) * 50 + 100;
         }
         return this.estimateTimeFn(width, height);
-    }
-
-    /**
-     * Fallback to WebGL processor
-     */
-    async processWebGL(imageData, params) {
-        // Import the original WebGL processor
-        const { WebGLProcessor } = await import('./webgl-processor.js');
-        const processor = new WebGLProcessor();
-        await processor.init();
-        
-        // Convert params
-        const webglParams = {
-            blurRadius: params.blurRadius || 3.6,
-            edgeIntensity: params.edgeIntensity || 1.42,
-            threshold: params.threshold || 0.175,
-            sigmaRatio: params.sigmaRatio || 3.6
-        };
-        
-        return processor.processImage(imageData, webglParams);
-    }
-
-    /**
-     * Check if WASM is supported and loaded
-     */
-    static isSupported() {
-        return typeof WebAssembly === 'object' && 
-               typeof WebAssembly.instantiate === 'function';
     }
 }
 
