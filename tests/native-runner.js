@@ -47,19 +47,19 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - fine-tune around adapt-15-4 (the best so far)
+// FINAL VALIDATION - around the winner: window=21, c=5, GAUSSIAN method
 const VARIANTS = [
-  // Around window=15, c=4
-  { type: 'adaptive', windowSize: 15, c: 3, method: 0, label: 'adapt-15-3-mean' },
-  { type: 'adaptive', windowSize: 15, c: 3.5, method: 0, label: 'adapt-15-3.5-mean' },
-  { type: 'adaptive', windowSize: 15, c: 4, method: 0, label: 'adapt-15-4-mean' },
-  { type: 'adaptive', windowSize: 15, c: 4.5, method: 0, label: 'adapt-15-4.5-mean' },
-  { type: 'adaptive', windowSize: 15, c: 5, method: 0, label: 'adapt-15-5-mean' },
+  // The winner
+  { type: 'adaptive', windowSize: 21, c: 5, method: 1, label: 'final-winner-21-5' },
   
-  // Try nearby window sizes with c=4
-  { type: 'adaptive', windowSize: 13, c: 4, method: 0, label: 'adapt-13-4-mean' },
-  { type: 'adaptive', windowSize: 17, c: 4, method: 0, label: 'adapt-17-4-mean' },
-  { type: 'adaptive', windowSize: 19, c: 4, method: 0, label: 'adapt-19-4-mean' },
+  // Fine-tune around winner
+  { type: 'adaptive', windowSize: 21, c: 4, method: 1, label: 'final-21-4' },
+  { type: 'adaptive', windowSize: 21, c: 6, method: 1, label: 'final-21-6' },
+  { type: 'adaptive', windowSize: 19, c: 5, method: 1, label: 'final-19-5' },
+  { type: 'adaptive', windowSize: 23, c: 5, method: 1, label: 'final-23-5' },
+  
+  // Compare to MEAN method
+  { type: 'adaptive', windowSize: 21, c: 5, method: 0, label: 'final-21-5-mean' },
 ];
 
 async function compileNative() {
