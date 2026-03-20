@@ -36,21 +36,15 @@ class ColoringApp {
         if (this.wasmState !== 'idle') return;
         
         this.wasmState = 'loading';
-        console.log('Loading WASM in background...');
+        console.log('Loading WASM...');
         
         try {
-            // Try to load WASM processor (may not exist yet)
-            let WasmProcessor = null;
-            try {
-                const mod = await import('./wasm-processor.js');
-                WasmProcessor = mod.WasmProcessor || mod.default;
-            } catch (importErr) {
-                console.log('WASM module not available, will use WebGL');
-                throw new Error('WASM not available');
-            }
+            const mod = await import('./wasm-processor.js');
+            console.log('wasm-processor module loaded:', mod);
             
+            const WasmProcessor = mod.WasmProcessor || mod.default;
             if (!WasmProcessor) {
-                throw new Error('WASM export not found');
+                throw new Error('WasmProcessor not exported from module');
             }
             
             this.processor = new WasmProcessor();
@@ -60,23 +54,10 @@ class ColoringApp {
             console.log('✓ WASM processor ready');
             
         } catch (err) {
-            console.warn('WASM failed, using WebGL:', err.message);
-            
-            // Use global WebGLProcessor (loaded via script tag)
-            if (typeof window !== 'undefined' && window.WebGLProcessor) {
-                try {
-                    this.processor = new window.WebGLProcessor();
-                    await this.processor.init();
-                    this.wasmState = 'ready';
-                    console.log('✓ WebGL processor ready');
-                } catch (webglErr) {
-                    console.error('WebGL init failed:', webglErr);
-                    this.wasmState = 'error';
-                }
-            } else {
-                console.error('WebGLProcessor not available globally');
-                this.wasmState = 'error';
-            }
+            console.error('WASM loading failed:', err);
+            console.error('Error stack:', err.stack);
+            this.wasmState = 'error';
+            this.showStatus('WASM failed to load: ' + err.message, 'error');
         }
     }
 
