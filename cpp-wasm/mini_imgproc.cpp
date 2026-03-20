@@ -442,6 +442,20 @@ Image processToColoringPage(
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
     
+    // Step 2.5: Soft thresholding - reduce gray tones while keeping some gradient
+    for (int i = 0; i < width * height; ++i) {
+        uint8_t val = dog.data[i];
+        // Boost mid-tones toward white, keep strong edges dark
+        if (val < 30) {
+            dog.data[i] = 0;  // Strong edge -> black
+        } else if (val > 150) {
+            dog.data[i] = 255;  // Background -> white  
+        } else {
+            // Soft transition for mid-tones
+            dog.data[i] = static_cast<uint8_t>(255 - ((255 - val) * 1.5f));
+        }
+    }
+    
     // Debug: return raw DoG if requested
     if (debugDogOut) {
         *debugDogOut = dog;
