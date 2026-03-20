@@ -113,8 +113,16 @@ export class AIColoringEvaluator {
     const data = await response.json();
     const text = data.choices[0].message.content;
     
-    // Debug: log raw response
+    // Debug: log raw response (first 150 chars)
     console.log('  🤖 AI raw:', text.substring(0, 150).replace(/\n/g, ' '));
+    
+    // If narration detected, try to extract from later in the text
+    if (text.includes('The user wants me to')) {
+      console.log('  ⚠️  AI is narrating, checking end of response...');
+      // Look at the end of the response for the actual answer
+      const lastLines = text.split(/[.!?]/).slice(-3).join(' ');
+      console.log('  📝 Last part:', lastLines.substring(0, 100));
+    }
 
     // Extract rating: look for pattern like "7 -" or "Rating: 7" or standalone number
     // Avoid matching "1-10" by looking for number at start or after common prefixes
