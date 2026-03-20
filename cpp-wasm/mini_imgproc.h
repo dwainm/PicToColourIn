@@ -61,6 +61,12 @@ Image bilateralFilter(const Image& src, float spatialSigma, float intensitySigma
 // Non-maximum suppression for edge thinning
 Image nonMaxSuppress(const Image& src);
 
+// Adaptive thresholding
+Image adaptiveThreshold(const Image& src, int windowSize, float c);
+
+// Hysteresis thresholding (Canny-style)
+Image hysteresisThreshold(const Image& src, uint8_t lowThresh, uint8_t highThresh);
+
 // Contrast stretching
 Image stretchContrast(const Image& src, float lowPercentile, float highPercentile);
 

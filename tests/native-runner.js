@@ -47,20 +47,14 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test NMS for cleaner edges
+// Parameter variants - test hysteresis thresholding for cleaner edges
 const VARIANTS = [
-  // Baseline 7/10 winner (NMS now always applied)
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'nms-base' },
-  
-  // Slightly stronger intensity to compensate for NMS thinning
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'nms-strong' },
-  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'nms-heavy' },
-  
-  // With light bilateral + NMS
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 1, bilateralIntensity: 20, label: 'nms-bil' },
-  
-  // Tighter DoG + NMS
-  { blurRadius: 6.5, edgeIntensity: 6, sigmaRatio: 1.3, closeRadius: 0, bilateralSpatial: 0, label: 'nms-tight' },
+  // Hysteresis-based variants
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-7-5.5' },
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-7-6' },
+  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-7.5-6.5' },
+  { blurRadius: 6.5, edgeIntensity: 6, sigmaRatio: 1.4, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-6.5-6' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.6, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-8-6' },
 ];
 
 async function compileNative() {

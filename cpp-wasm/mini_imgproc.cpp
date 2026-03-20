@@ -285,6 +285,93 @@ Image nonMaxSuppress(const Image& src) {
     return result;
 }
 
+// Adaptive thresholding - threshold based on local neighborhood
+Image adaptiveThreshold(const Image& src, int windowSize, float c) {
+    int halfWindow = windowSize / 2;
+    Image result(src.width, src.height);
+    
+    for (int y = 0; y < src.height; ++y) {
+        for (int x = 0; x < src.width; ++x) {
+            // Calculate local mean
+            float sum = 0;
+            int count = 0;
+            
+            for (int dy = -halfWindow; dy <= halfWindow; ++dy) {
+                for (int dx = -halfWindow; dx <= halfWindow; ++dx) {
+                    int nx = std::max(0, std::min(x + dx, src.width - 1));
+                    int ny = std::max(0, std::min(y + dy, src.height - 1));
+                    sum += src.at(nx, ny);
+                    count++;
+                }
+            }
+            
+            float localMean = sum / count;
+            float threshold = localMean - c;
+            
+            uint8_t val = src.at(x, y);
+            result.at(x, y) = (val > threshold) ? 255 : 0;
+        }
+    }
+    
+    return result;
+}
+
+// Hysteresis thresholding (Canny-style edge tracking)
+Image hysteresisThreshold(const Image& src, uint8_t lowThresh, uint8_t highThresh) {
+    Image result(src.width, src.height);
+    
+    // Mark strong edges
+    for (int y = 0; y < src.height; ++y) {
+        for (int x = 0; x < src.width; ++x) {
+            uint8_t val = src.at(x, y);
+            if (val >= highThresh) {
+                result.at(x, y) = 255;  // Strong edge
+            } else if (val >= lowThresh) {
+                result.at(x, y) = 128;  // Weak edge (candidate)
+            } else {
+                result.at(x, y) = 0;    // Non-edge
+            }
+        }
+    }
+    
+    // Trace edges - connect weak to strong
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (int y = 1; y < src.height - 1; ++y) {
+            for (int x = 1; x < src.width - 1; ++x) {
+                if (result.at(x, y) == 128) {  // Weak edge
+                    // Check if connected to strong edge
+                    bool connected = false;
+                    for (int dy = -1; dy <= 1 && !connected; ++dy) {
+                        for (int dx = -1; dx <= 1; ++dx) {
+                            if (result.at(x + dx, y + dy) == 255) {
+                                connected = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (connected) {
+                        result.at(x, y) = 255;
+                        changed = true;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Remove remaining weak edges
+    for (int y = 0; y < src.height; ++y) {
+        for (int x = 0; x < src.width; ++x) {
+            if (result.at(x, y) == 128) {
+                result.at(x, y) = 0;
+            }
+        }
+    }
+    
+    return result;
+}
+
 Image processToColoringPage(
     const uint8_t* rgbaIn,
     int width,
@@ -314,6 +401,12 @@ Image processToColoringPage(
     
     // Step 2.5: Non-maximum suppression (thin edges for cleaner lines)
     dog = nonMaxSuppress(dog);
+    
+    // Step 2.6: Hysteresis thresholding (Canny-style edge cleanup)
+    // Keeps strong edges and connects through weak regions
+    uint8_t lowThresh = static_cast<uint8_t>(edgeIntensity * 15);  // e.g., 6*15 = 90
+    uint8_t highThresh = static_cast<uint8_t>(edgeIntensity * 25); // e.g., 6*25 = 150
+    dog = hysteresisThreshold(dog, lowThresh, highThresh);
     
     // Debug: return raw DoG if requested
     if (debugDogOut) {
