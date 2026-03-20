@@ -61,7 +61,6 @@ class WasmProcessor {
             
             // Verify HEAP is available
             if (!heap) {
-                console.error('No heap available, module contents:', this.module);
                 throw new Error('WASM HEAP not initialized');
             }
             
@@ -96,8 +95,6 @@ class WasmProcessor {
             this.isReady = true;
             
         } catch (err) {
-            console.error('WASM load FAILED:', err);
-            console.error('Error stack:', err.stack);
             this.fallbackMode = true;
             this.isReady = false;
             throw err; // Re-throw so caller knows

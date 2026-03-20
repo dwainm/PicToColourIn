@@ -27,7 +27,6 @@ class ColoringApp {
         
         // Start loading WASM immediately in background (don't await)
         this.loadWasmInBackground().catch(err => {
-            console.error('Background WASM load failed:', err);
         });
     }
 
@@ -50,8 +49,6 @@ class ColoringApp {
             this.wasmState = 'ready';
             
         } catch (err) {
-            console.error('WASM loading failed:', err);
-            console.error('Error stack:', err.stack);
             this.wasmState = 'error';
             this.showStatus('WASM failed to load: ' + err.message, 'error');
         }
@@ -134,7 +131,6 @@ class ColoringApp {
             await this.process();
             
         } catch (err) {
-            console.error('Error loading image:', err);
             this.showStatus('Error loading image: ' + err.message, 'error');
             this.hideLoadingOverPhoto();
         }
@@ -179,7 +175,6 @@ class ColoringApp {
 
     async process() {
         if (!this.processor) {
-            console.warn('Processor not initialized yet, waiting...');
             // Wait a bit and try again
             await new Promise(r => setTimeout(r, 500));
             if (!this.processor) {
@@ -217,7 +212,6 @@ class ColoringApp {
             this.downloadBtn.disabled = false;
             
         } catch (err) {
-            console.error('Processing error:', err);
             this.hideLoadingOverPhoto();
             this.showStatus('Processing failed. Try a different photo.', 'error');
         }
