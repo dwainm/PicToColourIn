@@ -56,30 +56,34 @@ export class AIColoringEvaluator {
     const messages = [{
       role: 'system',
       content: 'You are a direct evaluator. Never explain your reasoning process. Just give the answer immediately.'
-    }, {
+    }];
+    
+    const userMessage = {
       role: 'user',
       content: []
-    }];
+    };
     
     // Add original if available
     if (originalBase64) {
-      messages[0].content.push({
+      userMessage.content.push({
         type: 'image_url',
         image_url: { url: `data:image/jpeg;base64,${originalBase64}` }
       });
     }
     
     // Add processed image
-    messages[0].content.push({
+    userMessage.content.push({
       type: 'image_url',
       image_url: { url: `data:image/png;base64,${processedBase64}` }
     });
     
     // Add text prompt
-    messages[0].content.push({
+    userMessage.content.push({
       type: 'text',
       text: criteriaPrompts[criteria] || criteriaPrompts.standard
     });
+    
+    messages.push(userMessage);
 
     // Debug: log what we're sending
     console.log('  📤 Sending', originalBase64 ? '2' : '1', 'images + prompt');
