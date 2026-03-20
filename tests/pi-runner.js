@@ -16,13 +16,13 @@ const TEST_IMAGE = process.env.TEST_IMAGE || join(__dirname, 'fixtures', 'sample
 const OUTPUT_DIR = join(__dirname, 'outputs');
 const PORT = 8888;
 
-// Parameter variants with LOWER thresholds to reduce black fill
+// Parameter variants with HIGHER intensity
 const VARIANTS = [
-  { blurRadius: 0.8, edgeIntensity: 1.2, threshold: 0.08, sigmaRatio: 1.6, label: 'fine-detail' },
-  { blurRadius: 1.5, edgeIntensity: 1.0, threshold: 0.10, sigmaRatio: 2.0, label: 'balanced' },
-  { blurRadius: 2.5, edgeIntensity: 0.8, threshold: 0.12, sigmaRatio: 2.5, label: 'smooth' },
-  { blurRadius: 1.0, edgeIntensity: 1.4, threshold: 0.09, sigmaRatio: 1.8, label: 'crisp' },
-  { blurRadius: 3.0, edgeIntensity: 0.7, threshold: 0.15, sigmaRatio: 3.0, label: 'soft' },
+  { blurRadius: 0.8, edgeIntensity: 2.0, threshold: 0.08, sigmaRatio: 1.6, label: 'fine-detail' },
+  { blurRadius: 1.5, edgeIntensity: 1.8, threshold: 0.10, sigmaRatio: 2.0, label: 'balanced' },
+  { blurRadius: 2.5, edgeIntensity: 1.5, threshold: 0.12, sigmaRatio: 2.5, label: 'smooth' },
+  { blurRadius: 1.0, edgeIntensity: 2.2, threshold: 0.09, sigmaRatio: 1.8, label: 'crisp' },
+  { blurRadius: 3.0, edgeIntensity: 1.3, threshold: 0.15, sigmaRatio: 3.0, label: 'soft' },
 ];
 
 async function startServer() {

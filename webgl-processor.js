@@ -483,7 +483,7 @@ const DOG_FRAGMENT_SHADER = `
     void main() {
         float narrow = grayscale(texture2D(u_sourceTexture, v_texCoord));
         float wide = grayscale(texture2D(u_blurTexture, v_texCoord));
-        float edge = abs(narrow - wide) * u_edgeIntensity * 4.0;
+        float edge = abs(narrow - wide) * u_edgeIntensity * 6.0;
         
         // Darker edges but never pure black (0.2 minimum)
         // This gives defined lines without heavy fill
