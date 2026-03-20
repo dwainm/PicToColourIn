@@ -1,18 +1,17 @@
 /**
  * Emscripten bindings for mini_imgproc
- * Exports: processImage WASM function
+ * Simple C API - no embind
  */
 
-#include <emscripten/bind.h>
+#include <emscripten/emscripten.h>
 #include "mini_imgproc.h"
-
-using namespace emscripten;
 
 // Wrapper that takes raw memory pointer from JS
 extern "C" {
 
 // Process image and return pointer to output buffer
 // Caller must free the result with freeProcessedImage()
+EMSCRIPTEN_KEEPALIVE
 uint8_t* processImage(
     const uint8_t* rgbaIn,
     int width,
@@ -41,11 +40,13 @@ uint8_t* processImage(
 }
 
 // Free memory allocated by processImage
+EMSCRIPTEN_KEEPALIVE
 void freeProcessedImage(uint8_t* ptr) {
     free(ptr);
 }
 
 // Get estimated processing time in ms (based on megapixels)
+EMSCRIPTEN_KEEPALIVE
 int estimateProcessingTime(int width, int height) {
     float megapixels = (width * height) / 1000000.0f;
     // Rough estimate: 50ms per megapixel for DoG + closing
@@ -53,8 +54,3 @@ int estimateProcessingTime(int width, int height) {
 }
 
 } // extern "C"
-
-// Embind bindings for cleaner JS interface (optional)
-EMSCRIPTEN_BINDINGS(imgproc_module) {
-    function("estimateProcessingTime", &estimateProcessingTime);
-}
