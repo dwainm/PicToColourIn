@@ -123,13 +123,21 @@ async function renderVariant(browser, params, testImagePath) {
     
     await page.waitForTimeout(2000);
     
-    // Screenshot the canvas
-    const canvas = await page.locator('#outputCanvas');
+    // Wait for processing to complete (look for status text)
+    await page.waitForTimeout(3000); // Give WASM time to process
+    
+    // Screenshot the SOURCE canvas (original image)
+    const sourceCanvas = await page.locator('#sourceCanvas');
+    const sourcePath = join(OUTPUT_DIR, `source-${params.label}.png`);
+    await sourceCanvas.screenshot({ path: sourcePath });
+    
+    // Screenshot the OUTPUT canvas (processed coloring page)
+    const outputCanvas = await page.locator('#outputCanvas');
     const outputPath = join(OUTPUT_DIR, `variant-${params.label}.png`);
-    await canvas.screenshot({ path: outputPath });
+    await outputCanvas.screenshot({ path: outputPath });
     
     await page.close();
-    return outputPath;
+    return { sourcePath, outputPath };
     
   } catch (err) {
     // Debug screenshot on failure
@@ -216,17 +224,17 @@ async function main() {
       attempts++;
       
       try {
-        const path = await renderVariant(browser, params, TEST_IMAGE);
+        const { sourcePath, outputPath } = await renderVariant(browser, params, TEST_IMAGE);
         
         if (process.env.SKIP_AI) {
           status[params.label] = 'done: ✓ rendered (skipped AI)';
           printStatus();
-          return { params, path, evaluation: { overall: 0 } };
+          return { params, sourcePath, outputPath, evaluation: { overall: 0 } };
         } else {
-          const evalResult = await evaluator.evaluate(path, 'standard', TEST_IMAGE);
+          const evalResult = await evaluator.evaluate(outputPath, 'standard', TEST_IMAGE);
           status[params.label] = `done: ✓ ${evalResult.overall}/10`;
           printStatus();
-          return { params, path, evaluation: evalResult };
+          return { params, sourcePath, outputPath, evaluation: evalResult };
         }
         
       } catch (err) {
