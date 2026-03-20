@@ -47,20 +47,21 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - back to basics, fine-tune 7/10 winner
+// Parameter variants - push 8/10 to 9/10
 const VARIANTS = [
-  // Original 7/10 winner baseline (blur=7, intensity=5.5, sigma=1.5)
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'base-7-5.5' },
+  // 8/10 winner baseline
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'push-7-5.8' },
   
-  // Slight variations
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7-5.8' },
-  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7.2-5.5' },
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.6, closeRadius: 0, label: 'tune-sigma-1.6' },
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.4, closeRadius: 0, label: 'tune-sigma-1.4' },
+  // Fine variations around winner
+  { blurRadius: 6.8, edgeIntensity: 5.7, sigmaRatio: 1.5, closeRadius: 0, label: 'push-6.8-5.7' },
+  { blurRadius: 7.2, edgeIntensity: 5.9, sigmaRatio: 1.5, closeRadius: 0, label: 'push-7.2-5.9' },
+  { blurRadius: 7, edgeIntensity: 5.9, sigmaRatio: 1.5, closeRadius: 0, label: 'push-7-5.9' },
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.6, closeRadius: 0, label: 'push-sigma-1.6' },
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.4, closeRadius: 0, label: 'push-sigma-1.4' },
   
-  // Slightly stronger
-  { blurRadius: 7.5, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7.5-5.8' },
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7-6' },
+  // Slightly stronger but not too much
+  { blurRadius: 7.2, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'push-7.2-6' },
+  { blurRadius: 6.8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'push-6.8-6' },
 ];
 
 async function compileNative() {
