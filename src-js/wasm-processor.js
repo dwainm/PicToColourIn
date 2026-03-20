@@ -90,13 +90,28 @@ class WasmProcessor {
             
             // Direct call - set up stack for floats manually
             this.processFn = (ptr, w, h, windowSize, c, method, outMin, outMax) => {
-                // Log exact values before call
-                console.log('x9 INPUT:', {ptr, w, h, windowSize, c, method, outMin, outMax});
+                // FORCE all numeric params to proper types
+                const pPtr = ptr | 0;  // force int
+                const pW = w | 0;
+                const pH = h | 0; 
+                const pWindow = windowSize | 0;
+                const pC = +c;  // force float
+                const pMethod = method | 0;
+                const pMin = +outMin;  // force float
+                const pMax = +outMax;  // force float
                 
-                // Use ccall with explicit float params
+                // Log exact values before call
+                console.log('x9 INPUT TYPES:', {
+                    ptr: typeof pPtr, w: typeof pW, h: typeof pH, windowSize: typeof pWindow,
+                    c: typeof pC, cVal: pC,
+                    method: typeof pMethod,
+                    outMin: typeof pMin, outMinVal: pMin,
+                    outMax: typeof pMax, outMaxVal: pMax
+                });
+                
                 const result = this.module.ccall('x9', 'number',
                     ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
-                    [ptr, w, h, windowSize, c, method, outMin, outMax]
+                    [pPtr, pW, pH, pWindow, pC, pMethod, pMin, pMax]
                 );
                 
                 console.log('x9 OUTPUT ptr:', result);
