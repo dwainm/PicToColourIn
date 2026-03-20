@@ -86,9 +86,15 @@ class WasmProcessor {
             
             // Wrap C functions - using obfuscated names to hide implementation
             console.log('Wrapping C functions...');
-            this.processFn = this.module._x9;  // x9 = process
-            this.freeFn = this.module._y2;     // y2 = free  
-            this.estimateFn = this.module._z3;   // z3 = estimate
+            // Use ccall for proper type marshalling (especially floats)
+            this.processFn = (ptr, w, h, windowSize, c, method, outMin, outMax) => {
+                return this.module.ccall('x9', 'number', 
+                    ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
+                    [ptr, w, h, windowSize, c, method, outMin, outMax]
+                );
+            };
+            this.freeFn = (ptr) => this.module._free(ptr);  // Use built-in _free
+            this.estimateFn = (w, h) => this.module._z3(w, h);
             
             console.log('Functions bound:', {
                 process: !!this.processFn,
@@ -169,9 +175,7 @@ class WasmProcessor {
             // Call WASM function - adaptive threshold (OpenCV-style)
             const startTime = performance.now();
             
-            if (!this.processFn) {
-                throw new Error('WASM process function not available. Check build.');
-            }
+            console.log('Calling x9 with params:', {width, height, windowSize, c, method, outputMin, outputMax});
             
             const outputPtr = this.processFn(
                 inputPtr,
@@ -200,6 +204,22 @@ class WasmProcessor {
                 width,
                 height
             );
+            
+            // DEBUG: Check for pure black/white
+            let hasGray = false;
+            for (let i = 0; i < result.data.length; i += 4) {
+                const r = result.data[i];
+                const g = result.data[i+1];
+                const b = result.data[i+2];
+                // Check if any channel is not 0 or 255
+                if ((r !== 0 && r !== 255) || (g !== 0 && g !== 255) || (b !== 0 && b !== 255)) {
+                    hasGray = true;
+                    console.log('Found non-binary pixel at', i, ':', r, g, b);
+                    if (i > 100) break; // Just show first few
+                }
+            }
+            console.log('Has gray values:', hasGray);
+            
             console.log('WASM output ImageData:', result.width, 'x', result.height, 'data length:', result.data.length);
 
             // Free WASM memory
