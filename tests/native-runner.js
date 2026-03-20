@@ -47,17 +47,19 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test both GAUSSIAN and MEAN methods
+// Parameter variants - fine-tune around adapt-15-4 (the best so far)
 const VARIANTS = [
-  // GAUSSIAN_C (method=1)
-  { type: 'adaptive', windowSize: 15, c: 6, method: 1, label: 'adapt-15-6-gauss' },
-  { type: 'adaptive', windowSize: 15, c: 5, method: 1, label: 'adapt-15-5-gauss' },
-  
-  // MEAN_C (method=0) - faster, different look
-  { type: 'adaptive', windowSize: 15, c: 6, method: 0, label: 'adapt-15-6-mean' },
+  // Around window=15, c=4
+  { type: 'adaptive', windowSize: 15, c: 3, method: 0, label: 'adapt-15-3-mean' },
+  { type: 'adaptive', windowSize: 15, c: 3.5, method: 0, label: 'adapt-15-3.5-mean' },
+  { type: 'adaptive', windowSize: 15, c: 4, method: 0, label: 'adapt-15-4-mean' },
+  { type: 'adaptive', windowSize: 15, c: 4.5, method: 0, label: 'adapt-15-4.5-mean' },
   { type: 'adaptive', windowSize: 15, c: 5, method: 0, label: 'adapt-15-5-mean' },
-  { type: 'adaptive', windowSize: 21, c: 7, method: 0, label: 'adapt-21-7-mean' },
-  { type: 'adaptive', windowSize: 21, c: 5, method: 0, label: 'adapt-21-5-mean' },
+  
+  // Try nearby window sizes with c=4
+  { type: 'adaptive', windowSize: 13, c: 4, method: 0, label: 'adapt-13-4-mean' },
+  { type: 'adaptive', windowSize: 17, c: 4, method: 0, label: 'adapt-17-4-mean' },
+  { type: 'adaptive', windowSize: 19, c: 4, method: 0, label: 'adapt-19-4-mean' },
 ];
 
 async function compileNative() {
