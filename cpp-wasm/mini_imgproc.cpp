@@ -377,7 +377,7 @@ Image adaptiveThreshold(const Image& src, int blockSize, double delta, int metho
     // OpenCV's lookup table approach: tab[pixel - mean + 255]
     // THRESH_BINARY: if (src - mean > -delta) then maxval else 0
     // which is: if (src > mean - delta) then maxval else 0
-    uchar tab[768];
+    uint8_t tab[768];
     int idelta = static_cast<int>(delta);
     for (int i = 0; i < 768; ++i) {
         // i = src - mean + 255, so src - mean = i - 255
