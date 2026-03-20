@@ -123,8 +123,8 @@ class WasmProcessor {
             edgeIntensity = 1.42,
             sigmaRatio = 3.6,
             closeRadius = 1,
-            outputMin = 0.2,
-            outputMax = 0.8
+            outputMin = 0.0,
+            outputMax = 1.0
         } = params;
 
         // Extract dimensions
