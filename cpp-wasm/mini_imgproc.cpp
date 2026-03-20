@@ -521,3 +521,5 @@ Image colorEdgeMagnitude(const uint8_t* rgba, int width, int height, float color
     
     return result;
 }
+
+} // namespace imgproc
