@@ -15,7 +15,7 @@ export class AIColoringEvaluator {
     }
     this.apiKey = apiKey;
     this.baseUrl = 'https://api.fireworks.ai/inference/v1';
-    this.model = 'accounts/fireworks/models/llama-v3p2-11b-vision-instruct'; // Llama with vision
+    this.model = 'accounts/fireworks/models/kimi-k2p5'; // Try non-turbo version
   }
 
   /**
