@@ -63,7 +63,7 @@ class ColoringApp {
         this.sourceCanvas = document.getElementById('sourceCanvas');
         this.outputCanvas = document.getElementById('outputCanvas');
         this.loadingOverlay = document.getElementById('loadingOverlay');
-        this.loadingText = this.loadingOverlay?.querySelector('p');
+        this.loadingText = this.loadingOverlay ? this.loadingOverlay.querySelector('p') : null;
         this.newImageBtn = document.getElementById('newImageBtn');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.printBtn = document.getElementById('printBtn');
@@ -71,35 +71,35 @@ class ColoringApp {
     }
 
     bindEvents() {
-        this.dropZone?.addEventListener('click', () => this.fileInput?.click());
-        this.fileInput?.addEventListener('change', (e) => this.handleFileSelect(e));
+        if (this.dropZone) this.dropZone.addEventListener('click', () => { if (this.fileInput) this.fileInput.click(); });
+        if (this.fileInput) this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         
-        this.dropZone?.addEventListener('dragover', (e) => {
+        if (this.dropZone) this.dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             this.dropZone.classList.add('dragover');
         });
         
-        this.dropZone?.addEventListener('dragleave', () => {
+        if (this.dropZone) this.dropZone.addEventListener('dragleave', () => {
             this.dropZone.classList.remove('dragover');
         });
         
-        this.dropZone?.addEventListener('drop', (e) => {
+        if (this.dropZone) this.dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             this.dropZone.classList.remove('dragover');
-            const file = e.dataTransfer?.files?.[0];
-            if (file?.type?.startsWith('image/')) {
+            const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+            if (file && file.type && file.type.startsWith('image/')) {
                 this.loadImage(file);
             }
         });
         
-        this.newImageBtn?.addEventListener('click', () => this.reset());
-        this.downloadBtn?.addEventListener('click', () => this.download());
-        this.printBtn?.addEventListener('click', () => this.print());
+        if (this.newImageBtn) this.newImageBtn.addEventListener('click', () => this.reset());
+        if (this.downloadBtn) this.downloadBtn.addEventListener('click', () => this.download());
+        if (this.printBtn) this.printBtn.addEventListener('click', () => this.print());
     }
 
     handleFileSelect(e) {
-        const file = e.target?.files?.[0];
-        if (file?.type?.startsWith('image/')) {
+        const file = e.target && e.target.files ? e.target.files[0] : null;
+        if (file && file.type && file.type.startsWith('image/')) {
             this.loadImage(file);
         }
     }
