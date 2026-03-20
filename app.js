@@ -35,11 +35,9 @@ class ColoringApp {
         if (this.wasmState !== 'idle') return;
         
         this.wasmState = 'loading';
-        console.log('Loading WASM...');
         
         try {
             const mod = await import('./wasm-processor.js');
-            console.log('wasm-processor module loaded:', mod);
             
             const WasmProcessor = mod.WasmProcessor || mod.default;
             if (!WasmProcessor) {
@@ -50,7 +48,6 @@ class ColoringApp {
             await this.processor.init();
             
             this.wasmState = 'ready';
-            console.log('✓ WASM processor ready');
             
         } catch (err) {
             console.error('WASM loading failed:', err);
@@ -72,7 +69,6 @@ class ColoringApp {
         this.newImageBtn = document.getElementById('newImageBtn');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.printBtn = document.getElementById('printBtn');
-        this.testBtn = document.getElementById('testBtn');
         this.statusDiv = document.getElementById('status');
     }
 
@@ -101,46 +97,6 @@ class ColoringApp {
         this.newImageBtn?.addEventListener('click', () => this.reset());
         this.downloadBtn?.addEventListener('click', () => this.download());
         this.printBtn?.addEventListener('click', () => this.print());
-        
-        // DEBUG: Test canvas drawing - pure black/white
-        this.testBtn?.addEventListener('click', () => {
-            this.testCanvasPureBW();
-        });
-    }
-    
-    // DEBUG: Test drawing pure black and white directly on canvas
-    testCanvasPureBW() {
-        console.log('=== CANVAS PURE B/W TEST ===');
-        const ctx = this.outputCanvas.getContext('2d', { alpha: false });
-        this.outputCanvas.width = 400;
-        this.outputCanvas.height = 400;
-        
-        // Fill white
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, 400, 400);
-        
-        // Draw black circle
-        ctx.fillStyle = '#000000';
-        ctx.beginPath();
-        ctx.arc(200, 200, 100, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Check pixel values
-        const imageData = ctx.getImageData(0, 0, 400, 400);
-        let whiteCount = 0, blackCount = 0, grayCount = 0;
-        for (let i = 0; i < imageData.data.length; i += 4) {
-            const r = imageData.data[i];
-            const g = imageData.data[i+1];
-            const b = imageData.data[i+2];
-            if (r === 255 && g === 255 && b === 255) whiteCount++;
-            else if (r === 0 && g === 0 && b === 0) blackCount++;
-            else {
-                grayCount++;
-                if (grayCount < 5) console.log('Gray pixel:', r, g, b, 'at', i);
-            }
-        }
-        console.log('White pixels:', whiteCount, 'Black pixels:', blackCount, 'Gray:', grayCount);
-        console.log('==============================');
     }
 
     handleFileSelect(e) {
@@ -151,12 +107,10 @@ class ColoringApp {
     }
 
     async loadImage(file) {
-        console.log('Loading image:', file.name, file.type, file.size);
         
         try {
             // Load and display image immediately
             this.sourceImage = await this.createImageBitmap(file);
-            console.log('Image loaded:', this.sourceImage.width, 'x', this.sourceImage.height);
             
             this.displaySourceImage();
             
@@ -165,11 +119,10 @@ class ColoringApp {
             this.editorSection.style.display = 'flex';
             
             // Check WASM state
-            console.log('WASM state:', this.wasmState);
             
             if (this.wasmState === 'loading') {
                 // Show loading over photo while waiting
-                this.showLoadingOverPhoto('Loading high-performance engine...');
+                this.showLoadingOverPhoto('Preparing...');
                 await this.waitForWasmReady();
                 this.hideLoadingOverPhoto();
             } else if (this.wasmState === 'error') {
@@ -246,61 +199,21 @@ class ColoringApp {
         
         try {
             const ctx = this.sourceCanvas.getContext('2d', { alpha: false });
-            console.log('Source canvas size:', this.sourceCanvas.width, 'x', this.sourceCanvas.height);
             
             const imageData = ctx.getImageData(
                 0, 0, 
                 this.sourceCanvas.width, 
                 this.sourceCanvas.height
             );
-            console.log('ImageData size:', imageData.width, 'x', imageData.height, 'data length:', imageData.data.length);
             
-            const startTime = performance.now();
             const result = await this.processor.process(imageData, this.processingParams);
-            console.log('Result ImageData size:', result.width, 'x', result.height, 'data length:', result.data.length);
-            
-            // DEBUG: Check ImageData BEFORE putImageData
-            let wasmGray = false;
-            for (let i = 0; i < Math.min(100, result.data.length); i += 4) {
-                const r = result.data[i], g = result.data[i+1], b = result.data[i+2];
-                if ((r !== 0 && r !== 255) || (g !== 0 && g !== 255) || (b !== 0 && b !== 255)) {
-                    wasmGray = true;
-                    console.log('WASM GRAY at', i, ':', r, g, b);
-                    if (i > 20) break;
-                }
-            }
-            console.log('WASM ImageData has gray:', wasmGray);
-            
-            const processTime = performance.now() - startTime;
-            
-            // DEBUG: Check canvas color space
-            const testCtx = this.outputCanvas.getContext('2d', { alpha: false });
-            console.log('Canvas color space:', testCtx.getContextAttributes()?.colorSpace || 'unknown');
             
             // Display result
             const outCtx = this.outputCanvas.getContext('2d', { alpha: false });
-            console.log('Output canvas size before put:', this.outputCanvas.width, 'x', this.outputCanvas.height);
             outCtx.putImageData(result, 0, 0);
-            
-            // DEBUG: Verify canvas pixels are pure black/white
-            const sampleData = outCtx.getImageData(0, 0, 100, 100).data;
-            let hasGray = false;
-            for (let i = 0; i < sampleData.length; i += 4) {
-                const r = sampleData[i], g = sampleData[i+1], b = sampleData[i+2];
-                if ((r !== 0 && r !== 255) || (g !== 0 && g !== 255) || (b !== 0 && b !== 255)) {
-                    hasGray = true;
-                    console.log('GRAY PIXEL at', i, ':', r, g, b);
-                    if (i > 20) break;
-                }
-            }
-            console.log('Canvas has gray pixels:', hasGray);
-            
-            console.log('Result displayed');
             
             this.hideLoadingOverPhoto();
             
-            const mode = this.processor.fallbackMode ? 'Standard' : 'High-performance';
-            this.showStatus(`${mode} • ${(processTime/1000).toFixed(1)}s`, 'success');
             this.downloadBtn.disabled = false;
             
         } catch (err) {
