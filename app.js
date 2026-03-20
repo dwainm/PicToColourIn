@@ -26,37 +26,44 @@ class ColoringApp {
         this.cacheElements();
         this.bindEvents();
         
-        // Start loading WASM immediately in background
-        this.loadWasmInBackground();
+        // Start loading WASM immediately in background (don't await)
+        this.loadWasmInBackground().catch(err => {
+            console.error('Background WASM load failed:', err);
+        });
     }
 
     async loadWasmInBackground() {
         if (this.wasmState !== 'idle') return;
         
         this.wasmState = 'loading';
-        console.log('Loading high-performance engine in background...');
+        console.log('Loading WASM in background...');
         
         try {
-            const { WasmProcessor } = await import('./wasm-processor.js');
+            // Dynamic import - will fail gracefully if file missing
+            let WasmProcessor;
+            try {
+                const mod = await import('./wasm-processor.js');
+                WasmProcessor = mod.WasmProcessor;
+            } catch (importErr) {
+                console.log('WASM module not found, using WebGL');
+                throw new Error('WASM not available');
+            }
+            
             this.processor = new WasmProcessor();
             await this.processor.init();
             
-            if (!this.processor.fallbackMode) {
-                this.wasmState = 'ready';
-                console.log('✓ High-performance engine ready');
-            } else {
-                this.wasmState = 'ready';
-                console.log('✓ Standard engine ready (WebGL fallback)');
-            }
+            this.wasmState = 'ready';
+            console.log('✓ Processor ready');
+            
         } catch (err) {
-            console.warn('WASM failed, trying WebGL:', err.message);
+            console.warn('WASM failed, using WebGL:', err.message);
             
             try {
                 const { WebGLProcessor } = await import('./webgl-processor.js');
                 this.processor = new WebGLProcessor();
                 await this.processor.init();
                 this.wasmState = 'ready';
-                console.log('✓ WebGL engine ready');
+                console.log('✓ WebGL processor ready');
             } catch (webglErr) {
                 console.error('All processors failed:', webglErr);
                 this.wasmState = 'error';
@@ -114,9 +121,13 @@ class ColoringApp {
     }
 
     async loadImage(file) {
+        console.log('Loading image:', file.name, file.type, file.size);
+        
         try {
             // Load and display image immediately
             this.sourceImage = await this.createImageBitmap(file);
+            console.log('Image loaded:', this.sourceImage.width, 'x', this.sourceImage.height);
+            
             this.displaySourceImage();
             
             // Switch to editor
@@ -124,6 +135,8 @@ class ColoringApp {
             this.editorSection.style.display = 'flex';
             
             // Check WASM state
+            console.log('WASM state:', this.wasmState);
+            
             if (this.wasmState === 'loading') {
                 // Show loading over photo while waiting
                 this.showLoadingOverPhoto('Loading high-performance engine...');
@@ -138,8 +151,8 @@ class ColoringApp {
             await this.process();
             
         } catch (err) {
-            console.error('Error:', err);
-            this.showStatus('Error loading image. Try another photo.', 'error');
+            console.error('Error loading image:', err);
+            this.showStatus('Error loading image: ' + err.message, 'error');
             this.hideLoadingOverPhoto();
         }
     }
@@ -147,8 +160,11 @@ class ColoringApp {
     createImageBitmap(file) {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error('Failed to load image'));
+            img.onload = () => {
+                URL.revokeObjectURL(img.src); // Clean up
+                resolve(img);
+            };
+            img.onerror = () => reject(new Error('Failed to decode image'));
             img.src = URL.createObjectURL(file);
         });
     }
@@ -184,8 +200,18 @@ class ColoringApp {
     }
 
     async process() {
-        if (!this.processor || this.wasmState !== 'ready') {
-            this.showStatus('Processor not ready', 'error');
+        if (!this.processor) {
+            console.warn('Processor not initialized yet, waiting...');
+            // Wait a bit and try again
+            await new Promise(r => setTimeout(r, 500));
+            if (!this.processor) {
+                this.showStatus('Processor not ready yet. Please wait...', 'error');
+                return;
+            }
+        }
+        
+        if (this.wasmState !== 'ready') {
+            this.showStatus('Engine still loading. Please wait...', 'error');
             return;
         }
         
