@@ -9,6 +9,9 @@
 
 namespace imgproc {
 
+// Forward declarations
+Image colorEdgeLab(const uint8_t* rgba, int width, int height, float chromaWeight);
+
 Image rgbToGray(const uint8_t* rgba, int width, int height) {
     Image gray(width, height);
     
