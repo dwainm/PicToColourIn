@@ -13,7 +13,39 @@ import { AIColoringEvaluator } from './evaluators/ai-evaluator.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CPP_DIR = join(__dirname, '..', 'cpp-wasm');
 const OUTPUT_DIR = join(__dirname, 'outputs');
-const TEST_IMAGE = process.env.TEST_IMAGE || join(__dirname, 'fixtures', 'sample.jpg');
+const TEST_IMAGE = process.env.TEST_IMAGE || join(__dirname, 'fixtures', 'sample.ppm'); // Native test needs PPM format
+
+// Helper: check if file exists
+async function fileExists(path) {
+  try {
+    await readFile(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Helper: convert JPG to PPM using ffmpeg
+async function convertToPPM(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('ffmpeg', ['-i', inputPath, '-f', 'ppm', outputPath, '-y']);
+    proc.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg failed with code ${code}`));
+    });
+  });
+}
+
+// Helper: convert PPM to PNG using ffmpeg
+async function convertPPMtoPNG(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('ffmpeg', ['-i', inputPath, '-f', 'png', outputPath, '-y']);
+    proc.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg PNG conversion failed with code ${code}`));
+    });
+  });
+}
 
 // Parameter variants to test
 const VARIANTS = [
@@ -88,6 +120,15 @@ async function main() {
     process.exit(1);
   }
   
+  // Auto-convert test image to PPM if needed
+  if (TEST_IMAGE.endsWith('.ppm') && !await fileExists(TEST_IMAGE)) {
+    const jpgPath = TEST_IMAGE.replace('.ppm', '.jpg');
+    if (await fileExists(jpgPath)) {
+      console.log(`→ Converting ${jpgPath} to PPM format...`);
+      await convertToPPM(jpgPath, TEST_IMAGE);
+    }
+  }
+  
   await mkdir(OUTPUT_DIR, { recursive: true });
   
   // Compile native binary
@@ -108,23 +149,28 @@ async function main() {
     process.stdout.write(`  ${params.label}: `);
     
     try {
-      const outputPath = join(OUTPUT_DIR, `native-${params.label}.png`);
+      // Native C++ outputs PPM format
+      const ppmOutputPath = join(OUTPUT_DIR, `native-${params.label}.ppm`);
       
       // Run native C++ processor
       const start = Date.now();
-      await runNativeProcess(TEST_IMAGE, outputPath, params);
+      await runNativeProcess(TEST_IMAGE, ppmOutputPath, params);
       const elapsed = Date.now() - start;
       
       process.stdout.write(`${elapsed}ms → `);
       
+      // Convert PPM to PNG for AI evaluator (which expects PNG)
+      const pngOutputPath = join(OUTPUT_DIR, `native-${params.label}.png`);
+      await convertPPMtoPNG(ppmOutputPath, pngOutputPath);
+      
       // Evaluate with AI (unless skipped)
       if (process.env.SKIP_AI) {
         console.log('✓ (skipped AI)');
-        results.push({ params, outputPath, evaluation: { overall: 0 } });
+        results.push({ params, outputPath: pngOutputPath, evaluation: { overall: 0 } });
       } else {
-        const evalResult = await evaluator.evaluate(outputPath, 'standard', TEST_IMAGE);
+        const evalResult = await evaluator.evaluate(pngOutputPath, 'standard', TEST_IMAGE);
         console.log(`${evalResult.overall}/10`);
-        results.push({ params, outputPath, evaluation: evalResult });
+        results.push({ params, outputPath: pngOutputPath, evaluation: evalResult });
       }
       
     } catch (err) {
