@@ -1,12 +1,33 @@
 #!/bin/bash
-# Pre-push hook: Build WASM and auto-commit changes before pushing
+# Pre-push hook: Check JS syntax, build WASM, and auto-commit changes before pushing
 # REQUIRES: Emscripten must be installed locally to compile fresh WASM
 
-echo "🔧 Pre-push hook: Building WASM..."
+echo "🔧 Pre-push hook: Running checks..."
 
 # Get the git root directory
 PROJECT_DIR=$(git rev-parse --show-toplevel)
 cd "$PROJECT_DIR"
+
+# Step 1: JavaScript syntax check
+echo "→ Checking JavaScript syntax..."
+SYNTAX_ERRORS=0
+for f in app.js processing-queue.js src-js/wasm-processor.js; do
+    if ! node --check "$f" 2>/dev/null; then
+        echo "  ❌ Syntax error in: $f"
+        SYNTAX_ERRORS=1
+    fi
+done
+
+if [ $SYNTAX_ERRORS -eq 1 ]; then
+    echo ""
+    echo "❌ JavaScript syntax check failed - push aborted"
+    echo "   Run: node --check <file> to see details"
+    exit 1
+fi
+echo "  ✅ JavaScript syntax OK"
+
+# Step 2: Build WASM
+echo "→ Building WASM..."
 
 # Add common Emscripten locations to PATH
 export PATH="$HOME/emsdk:$HOME/emsdk/upstream/emscripten:$PATH"
@@ -14,7 +35,6 @@ export PATH="$HOME/emsdk:$HOME/emsdk/upstream/emscripten:$PATH"
 # Require Emscripten for build (no copying allowed)
 export REQUIRE_EMSCRIPTEN=1
 
-# Run the build script
 if ./build.sh; then
     echo "✅ WASM build successful"
 else
@@ -22,7 +42,7 @@ else
     exit 1
 fi
 
-# Check if WASM files changed
+# Step 3: Check if WASM files changed
 if ! git diff --quiet HEAD -- src-js/imgproc-wasm.* 2>/dev/null || ! git diff --quiet HEAD -- dist/imgproc-wasm.* 2>/dev/null; then
     echo ""
     echo "📝 WASM files changed - auto-committing..."
