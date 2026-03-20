@@ -54,6 +54,9 @@ export class AIColoringEvaluator {
     };
 
     const messages = [{
+      role: 'system',
+      content: 'You are a direct evaluator. Never explain your reasoning process. Just give the answer immediately.'
+    }, {
       role: 'user',
       content: []
     }];
