@@ -7,7 +7,7 @@ OPTIMIZATION = -O3
 EXPORTED_FUNCTIONS = -s EXPORTED_FUNCTIONS="['_x9', '_y2', '_z3', '_malloc', '_free']"
 EXPORTED_RUNTIME = -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'setValue', 'UTF8ToString', 'stringToUTF8', 'HEAP8', 'HEAPU8']"
 
-# Build settings
+# Build settings - ES2019 compatible (no optional chaining)
 WASM_FLAGS = \
 	$(OPTIMIZATION) \
 	-s WASM=1 \
@@ -20,9 +20,12 @@ WASM_FLAGS = \
 	-s NO_FILESYSTEM=1 \
 	-s DISABLE_EXCEPTION_CATCHING=1 \
 	-s NO_EXIT_RUNTIME=1 \
+	-s WASM_BIGINT=0 \
+	-s MIN_CHROME_VERSION=79 \
+	-s MIN_FIREFOX_VERSION=73 \
+	-s MIN_SAFARI_VERSION=130100 \
 	$(EXPORTED_FUNCTIONS) \
 	$(EXPORTED_RUNTIME) \
-	--closure 1 \
 	-flto
 
 # Include paths
