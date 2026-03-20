@@ -16,25 +16,43 @@ class WasmProcessor {
 
     async init() {
         try {
+            console.log('Starting WASM init...');
+            
             // Dynamic import of WASM module
+            console.log('Importing imgproc-wasm.js...');
             const wasmModule = await import('./imgproc-wasm.js');
+            console.log('WASM module imported:', wasmModule);
+            
             const ModuleFactory = wasmModule.default;
+            console.log('ModuleFactory:', ModuleFactory);
             
             // Create module instance with callbacks
+            console.log('Calling ModuleFactory...');
             const moduleInstance = await ModuleFactory({
                 onRuntimeInitialized: () => {
-                    console.log('WASM runtime initialized');
+                    console.log('WASM runtime initialized callback');
                 }
             });
+            console.log('Module instance created:', moduleInstance);
             
             this.module = moduleInstance;
             
+            // Check if already ready
+            console.log('Checking calledRun:', this.module.calledRun);
+            console.log('Checking HEAPU8:', !!this.module.HEAPU8);
+            
             // Wait for runtime to be fully ready
             if (!this.module.calledRun) {
-                await new Promise(resolve => {
+                console.log('Waiting for calledRun...');
+                let attempts = 0;
+                await new Promise((resolve, reject) => {
                     const check = () => {
+                        attempts++;
                         if (this.module.calledRun && this.module.HEAPU8) {
+                            console.log('WASM ready after', attempts, 'attempts');
                             resolve();
+                        } else if (attempts > 100) {
+                            reject(new Error('WASM init timeout'));
                         } else {
                             setTimeout(check, 10);
                         }
@@ -49,6 +67,7 @@ class WasmProcessor {
             }
             
             // Wrap C functions for easy calling
+            console.log('Wrapping C functions...');
             this.processImageFn = this.module.cwrap('processImage', 'number', [
                 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
             ]);
@@ -61,9 +80,11 @@ class WasmProcessor {
             console.log(`WASM memory: ${this.module.HEAPU8.length / 1024 / 1024}MB`);
             
         } catch (err) {
-            console.error('WASM load failed:', err);
+            console.error('WASM load FAILED:', err);
+            console.error('Error stack:', err.stack);
             this.fallbackMode = true;
             this.isReady = false;
+            throw err; // Re-throw so caller knows
         }
     }
 
