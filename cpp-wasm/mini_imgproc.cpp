@@ -187,6 +187,45 @@ Image morphologicalClose(const Image& src, int radius) {
     return erode(dilated, radius);
 }
 
+// Simple bilateral filter (edge-preserving smoothing)
+Image bilateralFilter(const Image& src, float spatialSigma, float intensitySigma) {
+    int radius = static_cast<int>(std::ceil(spatialSigma * 2));
+    Image result(src.width, src.height);
+    
+    float twoSpatialSigmaSq = 2.0f * spatialSigma * spatialSigma;
+    float twoIntensitySigmaSq = 2.0f * intensitySigma * intensitySigma;
+    
+    for (int y = 0; y < src.height; ++y) {
+        for (int x = 0; x < src.width; ++x) {
+            float centerVal = src.at(x, y);
+            float sum = 0.0f;
+            float weightSum = 0.0f;
+            
+            for (int dy = -radius; dy <= radius; ++dy) {
+                for (int dx = -radius; dx <= radius; ++dx) {
+                    float neighborVal = src.getClamped(x + dx, y + dy);
+                    
+                    // Spatial weight (distance)
+                    float spatialDist = dx * dx + dy * dy;
+                    float spatialWeight = std::exp(-spatialDist / twoSpatialSigmaSq);
+                    
+                    // Intensity weight (difference from center)
+                    float intensityDist = (neighborVal - centerVal) * (neighborVal - centerVal);
+                    float intensityWeight = std::exp(-intensityDist / twoIntensitySigmaSq);
+                    
+                    float weight = spatialWeight * intensityWeight;
+                    sum += neighborVal * weight;
+                    weightSum += weight;
+                }
+            }
+            
+            result.at(x, y) = static_cast<uint8_t>(sum / weightSum);
+        }
+    }
+    
+    return result;
+}
+
 Image stretchContrast(const Image& src, float lowPercentile, float highPercentile) {
     // Find min and max
     int minVal = 255, maxVal = 0;
@@ -219,10 +258,17 @@ Image processToColoringPage(
     int closeRadius,
     float outputMin,
     float outputMax,
-    Image* debugDogOut  // Optional: output raw DoG for debugging
+    Image* debugDogOut,  // Optional: output raw DoG for debugging
+    float bilateralSpatial = 2.0f,   // Spatial sigma for bilateral filter (0 to disable)
+    float bilateralIntensity = 30.0f  // Intensity sigma for bilateral filter
 ) {
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
+    
+    // Step 1.5: Bilateral filter for edge-preserving noise reduction
+    if (bilateralSpatial > 0) {
+        gray = bilateralFilter(gray, bilateralSpatial, bilateralIntensity);
+    }
     
     // Step 2: Difference of Gaussians
     float sigmaSmall = blurSigma / sigmaRatio;

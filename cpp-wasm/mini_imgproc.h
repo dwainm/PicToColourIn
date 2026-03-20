@@ -55,6 +55,9 @@ Image erode(const Image& src, int radius);
 // Morphological closing = dilate then erode (connects broken lines)
 Image morphologicalClose(const Image& src, int radius);
 
+// Bilateral filter (edge-preserving smoothing)
+Image bilateralFilter(const Image& src, float spatialSigma, float intensitySigma);
+
 // Contrast stretching
 Image stretchContrast(const Image& src, float lowPercentile, float highPercentile);
 
@@ -69,7 +72,9 @@ Image processToColoringPage(
     int closeRadius,        // morphological closing radius, e.g., 1 or 2
     float outputMin,        // minimum output value (0.0 for pure white)
     float outputMax,        // maximum output value (1.0 for pure black)
-    Image* debugDogOut = nullptr  // optional: output raw DoG for debugging
+    Image* debugDogOut = nullptr,  // optional: output raw DoG for debugging
+    float bilateralSpatial = 2.0f,   // bilateral spatial sigma (0 to disable)
+    float bilateralIntensity = 30.0f // bilateral intensity sigma
 );
 
 } // namespace imgproc

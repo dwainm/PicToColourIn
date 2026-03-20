@@ -47,22 +47,22 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - targeting 9/10 by addressing common issues
+// Parameter variants - testing bilateral filter for cleaner edges
 const VARIANTS = [
-  // Sharper edges - less blur
-  { blurRadius: 6, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'sharp-a' },
-  { blurRadius: 6.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'sharp-b' },
+  // Baseline 7/10 winner without bilateral
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'base' },
   
-  // Higher contrast - boost intensity
-  { blurRadius: 7, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 0, label: 'contrast-a' },
-  { blurRadius: 7, edgeIntensity: 8, sigmaRatio: 1.5, closeRadius: 0, label: 'contrast-b' },
+  // With bilateral filtering (spatial=2, intensity=30)
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2, bilateralIntensity: 30, label: 'bil-2-30' },
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2, bilateralIntensity: 25, label: 'bil-2-25' },
   
-  // Tighter DoG (smaller sigma ratio = sharper edges)
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.3, closeRadius: 0, label: 'tight-a' },
-  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.3, closeRadius: 0, label: 'tight-b' },
+  // Stronger bilateral (more smoothing)
+  { blurRadius: 7, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 3, bilateralIntensity: 40, label: 'bil-3-40' },
+  { blurRadius: 6.5, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2.5, bilateralIntensity: 35, label: 'bil-2.5-35' },
   
-  // With light morphological closing (connects lines without thickening too much)
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 1, label: 'closed-a' },
+  // Light bilateral (subtle smoothing)
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 1.5, bilateralIntensity: 20, label: 'bil-1.5-20' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2, bilateralIntensity: 30, label: 'bil-8-6' },
 ];
 
 async function compileNative() {
@@ -99,7 +99,9 @@ async function runNativeProcess(inputPath, outputPath, params) {
       params.blurRadius.toString(),
       params.edgeIntensity.toString(),
       params.sigmaRatio.toString(),
-      params.closeRadius.toString()
+      params.closeRadius.toString(),
+      (params.bilateralSpatial || 0).toString(),
+      (params.bilateralIntensity || 30).toString()
     ];
     
     const proc = spawn(join(OUTPUT_DIR, 'native-test'), args);

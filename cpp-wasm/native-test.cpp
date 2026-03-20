@@ -61,7 +61,7 @@ bool writePPM(const char* filename, const uint8_t* gray, int width, int height) 
 // Simple stub for command-line usage
 int main(int argc, char* argv[]) {
     if (argc < 7) {
-        std::cerr << "Usage: " << argv[0] << " <input.ppm> <output.ppm> <blurSigma> <edgeIntensity> <sigmaRatio> <closeRadius>\n";
+        std::cerr << "Usage: " << argv[0] << " <input.ppm> <output.ppm> <blurSigma> <edgeIntensity> <sigmaRatio> <closeRadius> [bilateralSpatial] [bilateralIntensity]\n";
         return 1;
     }
     
@@ -71,6 +71,8 @@ int main(int argc, char* argv[]) {
     float edgeIntensity = std::stof(argv[4]);
     float sigmaRatio = std::stof(argv[5]);
     int closeRadius = std::stoi(argv[6]);
+    float bilateralSpatial = (argc > 7) ? std::stof(argv[7]) : 0.0f;
+    float bilateralIntensity = (argc > 8) ? std::stof(argv[8]) : 30.0f;
     
     // Read input
     std::vector<uint8_t> rgba;
@@ -82,17 +84,19 @@ int main(int argc, char* argv[]) {
     }
     
     std::cerr << "Processing " << width << "x" << height << " with " 
-              << "blur=" << blurSigma << ", intensity=" << edgeIntensity << ", sigmaRatio=" << sigmaRatio << "\n";
+              << "blur=" << blurSigma << ", intensity=" << edgeIntensity 
+              << ", sigmaRatio=" << sigmaRatio << ", bilateral=" << bilateralSpatial << "/" << bilateralIntensity << "\n";
     
     // Debug: also output raw DoG
     imgproc::Image debugDog(1, 1);  // Will be overwritten
     
-    // Process
+    // Process with bilateral parameters
     imgproc::Image result = imgproc::processToColoringPage(
         rgba.data(), width, height,
         blurSigma, edgeIntensity, sigmaRatio,
         closeRadius, 0.0f, 1.0f,  // full black/white range
-        &debugDog  // Get debug output
+        &debugDog,  // Get debug output
+        bilateralSpatial, bilateralIntensity
     );
     
     // Write debug DoG output (before inversion)
