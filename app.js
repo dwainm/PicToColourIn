@@ -101,6 +101,49 @@ class ColoringApp {
         this.newImageBtn?.addEventListener('click', () => this.reset());
         this.downloadBtn?.addEventListener('click', () => this.download());
         this.printBtn?.addEventListener('click', () => this.print());
+        
+        // DEBUG: Test canvas drawing - pure black/white
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 't' && e.ctrlKey) {
+                e.preventDefault();
+                this.testCanvasPureBW();
+            }
+        });
+    }
+    
+    // DEBUG: Test drawing pure black and white directly on canvas
+    testCanvasPureBW() {
+        console.log('=== CANVAS PURE B/W TEST ===');
+        const ctx = this.outputCanvas.getContext('2d', { alpha: false });
+        this.outputCanvas.width = 400;
+        this.outputCanvas.height = 400;
+        
+        // Fill white
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, 400, 400);
+        
+        // Draw black circle
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(200, 200, 100, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Check pixel values
+        const imageData = ctx.getImageData(0, 0, 400, 400);
+        let whiteCount = 0, blackCount = 0, grayCount = 0;
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            const r = imageData.data[i];
+            const g = imageData.data[i+1];
+            const b = imageData.data[i+2];
+            if (r === 255 && g === 255 && b === 255) whiteCount++;
+            else if (r === 0 && g === 0 && b === 0) blackCount++;
+            else {
+                grayCount++;
+                if (grayCount < 5) console.log('Gray pixel:', r, g, b, 'at', i);
+            }
+        }
+        console.log('White pixels:', whiteCount, 'Black pixels:', blackCount, 'Gray:', grayCount);
+        console.log('==============================');
     }
 
     handleFileSelect(e) {
