@@ -11,6 +11,7 @@ namespace imgproc {
 
 // Forward declarations (in namespace)
 Image colorEdgeLab(const uint8_t* rgba, int width, int height, float chromaWeight);
+Image adaptiveThreshold(const Image& src, int blockSize, double delta, int method);
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn, int width, int height,
     int windowSize, float c, float outputMin, float outputMax
@@ -292,42 +293,103 @@ Image nonMaxSuppress(const Image& src) {
     return result;
 }
 
-// Adaptive thresholding - Gaussian weighted mean like OpenCV
-Image adaptiveThreshold(const Image& src, int windowSize, float c) {
-    int halfWindow = windowSize / 2;
+// OpenCV-compatible adaptive threshold - copied exactly from OpenCV source
+// method: 0 = MEAN (box filter), 1 = GAUSSIAN (Gaussian blur)
+Image adaptiveThreshold(const Image& src, int blockSize, double delta, int method) {
+    int halfBlock = blockSize / 2;
     Image result(src.width, src.height);
     
-    // Pre-compute Gaussian weights
-    float sigma = windowSize / 2.0f;
-    std::vector<float> weights(windowSize);
-    float weightSum = 0;
-    for (int i = 0; i < windowSize; ++i) {
-        float x = i - halfWindow;
-        weights[i] = std::exp(-(x * x) / (2 * sigma * sigma));
-        weightSum += weights[i];
+    // Pre-compute local mean using Gaussian or box filter
+    Image mean(src.width, src.height);
+    
+    if (method == 1) {  // GAUSSIAN_C - matches OpenCV's GaussianBlur
+        // Pre-compute 1D Gaussian weights (separable)
+        float sigma = 0.3f * ((blockSize - 1) * 0.5f - 1) + 0.8f;  // OpenCV sigma formula
+        std::vector<float> weights(blockSize);
+        float weightSum = 0;
+        for (int i = 0; i < blockSize; ++i) {
+            float x = i - halfBlock;
+            weights[i] = std::exp(-(x * x) / (2 * sigma * sigma));
+            weightSum += weights[i];
+        }
+        
+        // Separable 2D Gaussian (horizontal then vertical)
+        Image temp(src.width, src.height);
+        
+        // Horizontal pass
+        for (int y = 0; y < src.height; ++y) {
+            for (int x = 0; x < src.width; ++x) {
+                float sum = 0;
+                float wsum = 0;
+                for (int dx = -halfBlock; dx <= halfBlock; ++dx) {
+                    int nx = x + dx;
+                    // BORDER_REPLICATE handling
+                    if (nx < 0) nx = 0;
+                    if (nx >= src.width) nx = src.width - 1;
+                    float w = weights[dx + halfBlock];
+                    sum += src.at(nx, y) * w;
+                    wsum += w;
+                }
+                temp.at(x, y) = static_cast<uint8_t>(sum / wsum);
+            }
+        }
+        
+        // Vertical pass
+        for (int y = 0; y < src.height; ++y) {
+            for (int x = 0; x < src.width; ++x) {
+                float sum = 0;
+                float wsum = 0;
+                for (int dy = -halfBlock; dy <= halfBlock; ++dy) {
+                    int ny = y + dy;
+                    // BORDER_REPLICATE handling
+                    if (ny < 0) ny = 0;
+                    if (ny >= src.height) ny = src.height - 1;
+                    float w = weights[dy + halfBlock];
+                    sum += temp.at(x, ny) * w;
+                    wsum += w;
+                }
+                mean.at(x, y) = static_cast<uint8_t>(sum / wsum);
+            }
+        }
+    } else {  // MEAN_C - box filter
+        for (int y = 0; y < src.height; ++y) {
+            for (int x = 0; x < src.width; ++x) {
+                int sum = 0;
+                int count = 0;
+                for (int dy = -halfBlock; dy <= halfBlock; ++dy) {
+                    for (int dx = -halfBlock; dx <= halfBlock; ++dx) {
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        // BORDER_REPLICATE handling
+                        if (nx < 0) nx = 0;
+                        if (nx >= src.width) nx = src.width - 1;
+                        if (ny < 0) ny = 0;
+                        if (ny >= src.height) ny = src.height - 1;
+                        sum += src.at(nx, ny);
+                        count++;
+                    }
+                }
+                mean.at(x, y) = static_cast<uint8_t>(sum / count);
+            }
+        }
     }
     
+    // OpenCV's lookup table approach: tab[pixel - mean + 255]
+    // THRESH_BINARY: if (src - mean > -delta) then maxval else 0
+    // which is: if (src > mean - delta) then maxval else 0
+    uchar tab[768];
+    int idelta = static_cast<int>(delta);
+    for (int i = 0; i < 768; ++i) {
+        // i = src - mean + 255, so src - mean = i - 255
+        // condition: src - mean > -delta  =>  i - 255 > -delta  =>  i > 255 - delta
+        tab[i] = (i - 255 > -idelta) ? 255 : 0;
+    }
+    
+    // Apply threshold using lookup table
     for (int y = 0; y < src.height; ++y) {
         for (int x = 0; x < src.width; ++x) {
-            // Gaussian-weighted local mean
-            float sum = 0;
-            float totalWeight = 0;
-            
-            for (int dy = -halfWindow; dy <= halfWindow; ++dy) {
-                for (int dx = -halfWindow; dx <= halfWindow; ++dx) {
-                    int nx = std::max(0, std::min(x + dx, src.width - 1));
-                    int ny = std::max(0, std::min(y + dy, src.height - 1));
-                    float w = weights[dy + halfWindow] * weights[dx + halfWindow];
-                    sum += src.at(nx, ny) * w;
-                    totalWeight += w;
-                }
-            }
-            
-            float localMean = sum / totalWeight;
-            float threshold = localMean - c;
-            
-            uint8_t val = src.at(x, y);
-            result.at(x, y) = (val > threshold) ? 255 : 0;
+            int diff = src.at(x, y) - mean.at(x, y) + 255;
+            result.at(x, y) = tab[diff];
         }
     }
     
@@ -505,7 +567,8 @@ Image processToColoringPageAdaptive(
     Image gray = rgbToGray(rgbaIn, width, height);
     
     // Step 2: Adaptive threshold - Gaussian weighted like OpenCV
-    Image thresh = adaptiveThreshold(gray, windowSize, c);
+    // method=1 for GAUSSIAN_C (like OpenCV's ADAPTIVE_THRESH_GAUSSIAN_C)
+    Image thresh = adaptiveThreshold(gray, windowSize, c, 1);
     
     // Step 3: Output like OpenCV - regions ready to color
     // (Thresh is 255=white/foreground, 0=black/background)
