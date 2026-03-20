@@ -66,8 +66,20 @@ async function startServer() {
         return;
       }
     }
-      res.end('Not found: ' + url);
-    }
+    
+    // Serve the file
+    const ext = filePath.split('.').pop();
+    const ct = { html: 'text/html', js: 'text/javascript', css: 'text/css', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', wasm: 'application/wasm' }[ext] || 'text/plain';
+    
+    const headers = {
+      'Content-Type': ct,
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    };
+    
+    res.writeHead(200, headers);
+    res.end(content);
   });
   
   return new Promise((resolve) => {
