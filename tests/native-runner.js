@@ -103,6 +103,8 @@ async function runNativeProcess(inputPath, outputPath, params) {
     
     proc.on('close', (code) => {
       if (code === 0) {
+        // Log stderr from C++ (contains processing info)
+        if (stderr) console.log(`    [C++] ${stderr.trim()}`);
         resolve({ stdout, stderr });
       } else {
         reject(new Error(`Process failed: ${stderr}`));
