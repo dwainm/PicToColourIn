@@ -185,3 +185,6 @@ class WasmProcessor {
 if (typeof module !== 'undefined') {
     module.exports = { WasmProcessor };
 }
+
+export { WasmProcessor };
+export default WasmProcessor;
