@@ -9,14 +9,13 @@ class ColoringApp {
         this.processor = null;
         this.wasmState = 'idle'; // 'idle' | 'loading' | 'ready' | 'error'
         
-        // Tuned parameters (from 19 iterations)
+        // Tuned parameters for adaptive threshold (final winner: window=23, c=5)
         this.processingParams = {
-            blurRadius: 3.6,
-            edgeIntensity: 1.42,
-            sigmaRatio: 3.6,
-            closeRadius: 1,
-            outputMin: 0.15,
-            outputMax: 0.85
+            windowSize: 23,
+            c: 5.0,
+            method: 1,
+            outputMin: 0.0,  // Pure white
+            outputMax: 1.0   // Pure black
         };
         
         this.init();
