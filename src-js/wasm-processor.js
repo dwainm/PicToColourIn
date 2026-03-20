@@ -125,9 +125,9 @@ class WasmProcessor {
         }
 
         // PRODUCTION DEFAULTS: Adaptive threshold (OpenCV-style)
-        // Winner from testing: window=21, c=5, method=GAUSSIAN_C
+        // FINAL WINNER: window=23, c=5, method=GAUSSIAN_C (user selected)
         const {
-            windowSize = 21,     // Neighborhood size (21x21)
+            windowSize = 23,     // Neighborhood size (23x23) - slightly larger for smoother regions
             c = 5.0,             // Constant subtracted from mean
             method = 1,          // 1 = GAUSSIAN_C (smooth), 0 = MEAN_C (faster)
             outputMin = 0.0,     // White
