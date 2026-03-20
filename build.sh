@@ -26,7 +26,7 @@ mkdir -p dist
 # Copy production files
 echo "→ Copying files to dist/..."
 cp index.html dist/
-cp app-async.js dist/app.js
+cp app.js dist/
 cp webgl-processor.js dist/
 cp processing-queue.js dist/
 cp styles.css dist/
