@@ -437,11 +437,6 @@ Image processToColoringPage(
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
     
-    // Step 1.5: Pre-filtering - remove fine texture before edge detection
-    // Uncomment ONE of these to test:
-    // gray = medianFilter(gray, 1);  // 3x3 median - removes speckles
-    gray = boxBlur(gray, 1);       // 3x3 box blur - gentle smoothing
-    
     // Step 2: Difference of Gaussians
     float sigmaSmall = blurSigma / sigmaRatio;
     float sigmaLarge = blurSigma;

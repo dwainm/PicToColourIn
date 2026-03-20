@@ -47,14 +47,20 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test with 3x3 box blur pre-filter
+// Parameter variants - back to basics, fine-tune 7/10 winner
 const VARIANTS = [
-  // With 3x3 box blur pre-filter
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'box-7-6' },
-  { blurRadius: 7, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'box-7-6.5' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'box-8-6' },
-  { blurRadius: 8, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 0, label: 'box-8-7' },
-  { blurRadius: 9, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'box-9-6.5' },
+  // Original 7/10 winner baseline (blur=7, intensity=5.5, sigma=1.5)
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'base-7-5.5' },
+  
+  // Slight variations
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7-5.8' },
+  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7.2-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.6, closeRadius: 0, label: 'tune-sigma-1.6' },
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.4, closeRadius: 0, label: 'tune-sigma-1.4' },
+  
+  // Slightly stronger
+  { blurRadius: 7.5, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7.5-5.8' },
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'tune-7-6' },
 ];
 
 async function compileNative() {
