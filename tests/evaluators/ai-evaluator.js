@@ -116,8 +116,11 @@ export class AIColoringEvaluator {
     // Debug: log raw response
     console.log('  🤖 AI raw:', text.substring(0, 150).replace(/\n/g, ' '));
 
-    // Extract first number from response (simple format: "7 - reason")
-    const numberMatch = text.match(/(\d+)/);
+    // Extract rating: look for pattern like "7 -" or "Rating: 7" or standalone number
+    // Avoid matching "1-10" by looking for number at start or after common prefixes
+    const numberMatch = text.match(/(?:^|\b)([0-9]|10)(?:\s*-|\s*\/|\s*out|\s*of|\s*$|\s+\w)/) || 
+                        text.match(/rating[:\s]+([0-9]|10)/i) ||
+                        text.match(/score[:\s]+([0-9]|10)/i);
     
     if (!numberMatch) {
       console.error('Raw response:', text);
