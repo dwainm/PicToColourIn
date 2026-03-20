@@ -483,12 +483,18 @@ const DOG_FRAGMENT_SHADER = `
     void main() {
         float narrow = grayscale(texture2D(u_sourceTexture, v_texCoord));
         float wide = grayscale(texture2D(u_blurTexture, v_texCoord));
-        float edge = abs(narrow - wide) * u_edgeIntensity * 5.0;
-        float result = edge > u_threshold ? 0.0 : 1.0;
+        float edge = abs(narrow - wide) * u_edgeIntensity * 4.0;
+        float result;
+        if (edge > u_threshold * 1.2) {
+            result = 0.0;
+        } else if (edge > u_threshold * 0.8) {
+            result = 0.5;
+        } else {
+            result = 1.0;
+        }
         gl_FragColor = vec4(vec3(result), 1.0);
     }
-`;
-// Expose to window
+`;// Expose to window
 if (typeof window !== 'undefined') {
     window.WebGLProcessor = WebGLProcessor;
 }
