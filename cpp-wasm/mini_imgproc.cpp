@@ -219,7 +219,7 @@ Image processToColoringPage(
     int closeRadius,
     float outputMin,
     float outputMax,
-    Image* debugDogOut = nullptr  // Optional: output raw DoG for debugging
+    Image* debugDogOut  // Optional: output raw DoG for debugging
 ) {
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
