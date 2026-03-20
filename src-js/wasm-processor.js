@@ -90,6 +90,11 @@ class WasmProcessor {
                 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
             ]);
             
+            // NEW: Adaptive threshold function (OpenCV-style)
+            this.processImageAdaptiveFn = this.module.cwrap('processImageAdaptive', 'number', [
+                'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
+            ]);
+            
             this.freeImageFn = this.module.cwrap('freeProcessedImage', null, ['number']);
             this.estimateTimeFn = this.module.cwrap('estimateProcessingTime', 'number', ['number', 'number']);
             
@@ -108,6 +113,7 @@ class WasmProcessor {
 
     /**
      * Process image using WASM or fallback to WebGL
+     * Uses OpenCV-style adaptive threshold (winner: window=21, c=5, GAUSSIAN)
      */
     async process(imageData, params = {}) {
         if (!this.isReady) {
@@ -118,13 +124,19 @@ class WasmProcessor {
             return this.processWebGL(imageData, params);
         }
 
+        // PRODUCTION DEFAULTS: Adaptive threshold (OpenCV-style)
+        // Winner from testing: window=21, c=5, method=GAUSSIAN_C
         const {
-            blurRadius = 3.6,
-            edgeIntensity = 1.42,
-            sigmaRatio = 3.6,
-            closeRadius = 1,
-            outputMin = 0.0,
-            outputMax = 1.0
+            windowSize = 21,     // Neighborhood size (21x21)
+            c = 5.0,             // Constant subtracted from mean
+            method = 1,          // 1 = GAUSSIAN_C (smooth), 0 = MEAN_C (faster)
+            outputMin = 0.0,     // White
+            outputMax = 1.0,     // Black
+            // Legacy params (ignored in adaptive mode)
+            blurRadius,
+            edgeIntensity,
+            sigmaRatio,
+            closeRadius
         } = params;
 
         // Extract dimensions
@@ -159,14 +171,13 @@ class WasmProcessor {
             // Call WASM function
             const startTime = performance.now();
             
-            const outputPtr = this.processImageFn(
+            const outputPtr = this.processImageAdaptiveFn(
                 inputPtr,
                 width,
                 height,
-                blurRadius,
-                edgeIntensity,
-                sigmaRatio,
-                closeRadius,
+                windowSize,
+                c,
+                method,
                 outputMin,
                 outputMax
             );
