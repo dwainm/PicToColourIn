@@ -47,16 +47,14 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - color-aware with clean-7.2-5.5 params
+// Parameter variants - test speckle removal (clean-7.2-5.5 params)
 const VARIANTS = [
-  // Base: clean-7.2-5.5 params with color-aware
-  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7.2-5.5' },
-  
-  // Variations around that
-  { blurRadius: 7.2, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7.2-5.8' },
-  { blurRadius: 7.0, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7.0-5.5' },
-  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7.5-5.5' },
-  { blurRadius: 7.2, edgeIntensity: 5.2, sigmaRatio: 1.5, closeRadius: 0, label: 'color-7.2-5.2' },
+  // With speckle removal
+  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7.2-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7-5.5' },
+  { blurRadius: 7.2, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7.2-5.8' },
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7-5.8' },
+  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7.5-5.5' },
 ];
 
 async function compileNative() {

@@ -463,6 +463,10 @@ Image processToColoringPage(
         dog = morphologicalClose(dog, closeRadius);
     }
     
+    // Step 3.5: Remove small speckles/isolated edges (noise reduction)
+    // minSize=20 removes tiny texture speckles while keeping real edges
+    dog = removeSmallComponents(dog, 20);
+    
     // Step 4: Invert and scale to output range
     // DoG gives us edges as bright values - invert so edges are dark
     Image result(width, height);
@@ -519,6 +523,58 @@ Image colorEdgeMagnitude(const uint8_t* rgba, int width, int height, float color
             // Combined: color-aware edges
             float combined = lumDiff + colorWeight * colorDiff / 3.0f;  // /3 because RGB diff is 0-441
             result.at(x, y) = static_cast<uint8_t>(std::min(255.0f, combined * 2.0f));
+        }
+    }
+    
+    return result;
+}
+
+// Post-processing: remove small isolated edge components (speckle removal)
+Image removeSmallComponents(const Image& src, int minSize) {
+    Image result(src.width, src.height);
+    std::vector<bool> visited(src.width * src.height, false);
+    
+    auto getIndex = [&](int x, int y) { return y * src.width + x; };
+    
+    for (int y = 0; y < src.height; ++y) {
+        for (int x = 0; x < src.width; ++x) {
+            if (visited[getIndex(x, y)] || src.at(x, y) < 128) {
+                continue;  // Already visited or not an edge
+            }
+            
+            // Flood fill to find component size
+            std::vector<std::pair<int, int>> component;
+            std::vector<std::pair<int, int>> stack;
+            stack.push_back({x, y});
+            visited[getIndex(x, y)] = true;
+            
+            while (!stack.empty()) {
+                auto [cx, cy] = stack.back();
+                stack.pop_back();
+                component.push_back({cx, cy});
+                
+                // Check 8 neighbors
+                for (int dy = -1; dy <= 1; ++dy) {
+                    for (int dx = -1; dx <= 1; ++dx) {
+                        if (dx == 0 && dy == 0) continue;
+                        int nx = cx + dx, ny = cy + dy;
+                        if (nx >= 0 && nx < src.width && ny >= 0 && ny < src.height) {
+                            int nidx = getIndex(nx, ny);
+                            if (!visited[nidx] && src.at(nx, ny) >= 128) {
+                                visited[nidx] = true;
+                                stack.push_back({nx, ny});
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Keep component if it's large enough
+            if (component.size() >= static_cast<size_t>(minSize)) {
+                for (auto [cx, cy] : component) {
+                    result.at(cx, cy) = src.at(cx, cy);
+                }
+            }
         }
     }
     

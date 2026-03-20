@@ -64,6 +64,9 @@ Image nonMaxSuppress(const Image& src);
 // Color-aware edge detection (detects hue/saturation changes)
 Image colorEdgeMagnitude(const uint8_t* rgba, int width, int height, float colorWeight);
 
+// Remove small isolated edge components (speckle removal)
+Image removeSmallComponents(const Image& src, int minSize);
+
 // Median filter for noise removal
 Image medianFilter(const Image& src, int radius);
 
