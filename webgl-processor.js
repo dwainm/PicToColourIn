@@ -614,7 +614,12 @@ const BILATERAL_FRAGMENT_SHADER = `
     }
 `;
 
-// Export for ES module imports
+// Attach to window for global access (non-module script)
+if (typeof window !== 'undefined') {
+    window.WebGLProcessor = WebGLProcessor;
+}
+
+// Also support ES modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { WebGLProcessor };
 }

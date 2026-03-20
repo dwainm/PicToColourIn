@@ -39,35 +39,42 @@ class ColoringApp {
         console.log('Loading WASM in background...');
         
         try {
-            // Dynamic import - will fail gracefully if file missing
-            let WasmProcessor;
+            // Try to load WASM processor (may not exist yet)
+            let WasmProcessor = null;
             try {
-                const mod = await import('./webgl-processor.js');
-                WasmProcessor = mod.WasmProcessor;
+                const mod = await import('./wasm-processor.js');
+                WasmProcessor = mod.WasmProcessor || mod.default;
             } catch (importErr) {
-                console.log('WASM module not found, using WebGL');
+                console.log('WASM module not available, will use WebGL');
                 throw new Error('WASM not available');
+            }
+            
+            if (!WasmProcessor) {
+                throw new Error('WASM export not found');
             }
             
             this.processor = new WasmProcessor();
             await this.processor.init();
             
             this.wasmState = 'ready';
-            console.log('✓ Processor ready');
+            console.log('✓ WASM processor ready');
             
         } catch (err) {
             console.warn('WASM failed, using WebGL:', err.message);
             
-            try {
-                const mod = await import('./webgl-processor.js');
-                const WebGLProcessor = mod.WebGLProcessor;
-                
-                this.processor = new WebGLProcessor();
-                await this.processor.init();
-                this.wasmState = 'ready';
-                console.log('✓ WebGL processor ready');
-            } catch (webglErr) {
-                console.error('All processors failed:', webglErr);
+            // Use global WebGLProcessor (loaded via script tag)
+            if (typeof window !== 'undefined' && window.WebGLProcessor) {
+                try {
+                    this.processor = new window.WebGLProcessor();
+                    await this.processor.init();
+                    this.wasmState = 'ready';
+                    console.log('✓ WebGL processor ready');
+                } catch (webglErr) {
+                    console.error('WebGL init failed:', webglErr);
+                    this.wasmState = 'error';
+                }
+            } else {
+                console.error('WebGLProcessor not available globally');
                 this.wasmState = 'error';
             }
         }
