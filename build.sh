@@ -33,6 +33,11 @@ cp styles.css dist/
 cp ads.txt dist/
 
 # Copy WASM files if they exist
+if [ -f "src-js/wasm-processor.js" ]; then
+    cp src-js/wasm-processor.js dist/
+    echo "✓ Copied wasm-processor.js"
+fi
+
 if [ -f "src-js/imgproc-wasm.js" ]; then
     cp src-js/imgproc-wasm.js dist/
     echo "✓ Copied imgproc-wasm.js"
