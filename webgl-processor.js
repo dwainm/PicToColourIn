@@ -318,10 +318,10 @@ class WebGLProcessor {
         
         // Read pixels from canvas and return as ImageData
         const gl = this.gl;
-        const pixels = new Uint8ClampedArray(this.width * this.height * 4);
+        const pixels = new Uint8Array(this.width * this.height * 4);
         gl.readPixels(0, 0, this.width, this.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
         
-        // Flip Y (WebGL has different coordinate system)
+        // Flip Y (WebGL has different coordinate system) and convert to clamped
         const flipped = new Uint8ClampedArray(this.width * this.height * 4);
         for (let y = 0; y < this.height; y++) {
             const srcRow = y * this.width * 4;
