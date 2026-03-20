@@ -42,7 +42,7 @@ class ColoringApp {
             // Dynamic import - will fail gracefully if file missing
             let WasmProcessor;
             try {
-                const mod = await import('./wasm-processor.js');
+                const mod = await import('./webgl-processor.js');
                 WasmProcessor = mod.WasmProcessor;
             } catch (importErr) {
                 console.log('WASM module not found, using WebGL');
@@ -59,7 +59,9 @@ class ColoringApp {
             console.warn('WASM failed, using WebGL:', err.message);
             
             try {
-                const { WebGLProcessor } = await import('./webgl-processor.js');
+                const mod = await import('./webgl-processor.js');
+                const WebGLProcessor = mod.WebGLProcessor;
+                
                 this.processor = new WebGLProcessor();
                 await this.processor.init();
                 this.wasmState = 'ready';

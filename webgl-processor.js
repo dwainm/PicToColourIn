@@ -613,3 +613,10 @@ const BILATERAL_FRAGMENT_SHADER = `
         gl_FragColor = vec4(vec3(result), 1.0);
     }
 `;
+
+// Export for ES module imports
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { WebGLProcessor };
+}
+
+export { WebGLProcessor };
