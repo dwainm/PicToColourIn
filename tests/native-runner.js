@@ -47,14 +47,14 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test with 3x3 median pre-filter
+// Parameter variants - test with 3x3 box blur pre-filter
 const VARIANTS = [
-  // With 3x3 median pre-filter
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'median-7-6' },
-  { blurRadius: 7, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'median-7-6.5' },
-  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'median-7.5-6.5' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'median-8-6' },
-  { blurRadius: 8, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 0, label: 'median-8-7' },
+  // With 3x3 box blur pre-filter
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'box-7-6' },
+  { blurRadius: 7, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'box-7-6.5' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'box-8-6' },
+  { blurRadius: 8, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 0, label: 'box-8-7' },
+  { blurRadius: 9, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'box-9-6.5' },
 ];
 
 async function compileNative() {
