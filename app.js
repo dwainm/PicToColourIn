@@ -50,7 +50,8 @@ class ColoringApp {
             
         } catch (err) {
             this.wasmState = 'error';
-            this.showStatus('WASM failed to load: ' + err.message, 'error');
+            console.error('WASM load failed:', err);
+            this.showStatus('WASM failed: ' + err.message, 'error');
         }
     }
 
