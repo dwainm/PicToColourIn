@@ -34,7 +34,7 @@ async function startServer() {
   const rootDir = pathJoin(__dirname, '..'); // Serve from project root
   
   const server = createServer(async (req, res) => {
-    const url = req.url === '/' ? '/index.html' : req.url;
+    let url = req.url === '/' ? '/index.html' : req.url;
     
     // Serve empty favicon to prevent 404 errors
     if (url === '/favicon.ico') {
@@ -43,25 +43,29 @@ async function startServer() {
       return;
     }
     
-    const filePath = pathJoin(rootDir, url);
+    // Try to serve from root first
+    let filePath = pathJoin(rootDir, url);
+    let content;
     
     try {
-      const content = await readFile(filePath);
-      const ext = filePath.split('.').pop();
-      const ct = { html: 'text/html', js: 'text/javascript', css: 'text/css', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', wasm: 'application/wasm' }[ext] || 'text/plain';
-      
-      // CORS headers required for ES modules and WASM
-      const headers = {
-        'Content-Type': ct,
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      };
-      
-      res.writeHead(200, headers);
-      res.end(content);
+      content = await readFile(filePath);
     } catch {
-      res.writeHead(404);
+      // If not found in root, try src-js/ (for WASM files)
+      if (url.endsWith('.wasm') || url.endsWith('wasm-processor.js') || url.endsWith('imgproc-wasm.js')) {
+        try {
+          filePath = pathJoin(rootDir, 'src-js', url);
+          content = await readFile(filePath);
+        } catch {
+          res.writeHead(404);
+          res.end('Not found: ' + url);
+          return;
+        }
+      } else {
+        res.writeHead(404);
+        res.end('Not found: ' + url);
+        return;
+      }
+    }
       res.end('Not found: ' + url);
     }
   });
