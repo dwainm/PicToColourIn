@@ -186,8 +186,29 @@ async function main() {
   
   const evaluator = new AIColoringEvaluator();
   
-  // Run all variants in parallel
+  // Run all variants in parallel with progress tracking
+  const status = {};
+  VARIANTS.forEach(p => status[p.label] = 'pending');
+  
+  const printStatus = () => {
+    const lines = VARIANTS.map(p => {
+      const s = status[p.label];
+      if (s === 'pending') return `  ${p.label}: ⏳ waiting...`;
+      if (s === 'running') return `  ${p.label}: 🔄 processing...`;
+      if (s.startsWith('done:')) return `  ${p.label}: ${s.slice(5)}`;
+      return `  ${p.label}: ${s}`;
+    }).join('\n');
+    
+    // Clear screen and redraw
+    console.clear();
+    console.log(`🧪 Testing ${VARIANTS.length} parameter combinations in parallel...\n`);
+    console.log(lines);
+  };
+  
   const promises = VARIANTS.map(async (params) => {
+    status[params.label] = 'running';
+    printStatus();
+    
     let attempts = 0;
     const maxAttempts = 3;
     
@@ -198,11 +219,13 @@ async function main() {
         const path = await renderVariant(browser, params, TEST_IMAGE);
         
         if (process.env.SKIP_AI) {
-          console.log(`  ${params.label}: ✓ rendered (skipped AI eval)`);
+          status[params.label] = 'done: ✓ rendered (skipped AI)';
+          printStatus();
           return { params, path, evaluation: { overall: 0 } };
         } else {
           const evalResult = await evaluator.evaluate(path, 'standard', TEST_IMAGE);
-          console.log(`  ${params.label}: ✓ ${evalResult.overall}/10`);
+          status[params.label] = `done: ✓ ${evalResult.overall}/10`;
+          printStatus();
           return { params, path, evaluation: evalResult };
         }
         
@@ -210,7 +233,8 @@ async function main() {
         if (attempts < maxAttempts) {
           await new Promise(r => setTimeout(r, attempts * 1000));
         } else {
-          console.log(`  ${params.label}: ✗ ${err.message}`);
+          status[params.label] = `done: ✗ ${err.message.slice(0, 30)}`;
+          printStatus();
           return { params, path: null, evaluation: { overall: 0 }, error: err.message };
         }
       }
