@@ -372,6 +372,54 @@ Image hysteresisThreshold(const Image& src, uint8_t lowThresh, uint8_t highThres
     return result;
 }
 
+// Median filter for removing salt-and-pepper noise
+Image medianFilter(const Image& src, int radius) {
+    Image result(src.width, src.height);
+    int size = (2 * radius + 1) * (2 * radius + 1);
+    std::vector<uint8_t> window(size);
+    
+    for (int y = 0; y < src.height; ++y) {
+        for (int x = 0; x < src.width; ++x) {
+            int idx = 0;
+            
+            // Collect neighborhood
+            for (int dy = -radius; dy <= radius; ++dy) {
+                for (int dx = -radius; dx <= radius; ++dx) {
+                    window[idx++] = src.getClamped(x + dx, y + dy);
+                }
+            }
+            
+            // Find median
+            std::nth_element(window.begin(), window.begin() + size/2, window.begin() + idx);
+            result.at(x, y) = window[size/2];
+        }
+    }
+    
+    return result;
+}
+
+// Simple box blur for noise reduction (faster than Gaussian)
+Image boxBlur(const Image& src, int radius) {
+    Image result(src.width, src.height);
+    int size = (2 * radius + 1) * (2 * radius + 1);
+    
+    for (int y = 0; y < src.height; ++y) {
+        for (int x = 0; x < src.width; ++x) {
+            int sum = 0;
+            
+            for (int dy = -radius; dy <= radius; ++dy) {
+                for (int dx = -radius; dx <= radius; ++dx) {
+                    sum += src.getClamped(x + dx, y + dy);
+                }
+            }
+            
+            result.at(x, y) = static_cast<uint8_t>(sum / size);
+        }
+    }
+    
+    return result;
+}
+
 Image processToColoringPage(
     const uint8_t* rgbaIn,
     int width,
@@ -389,10 +437,10 @@ Image processToColoringPage(
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
     
-    // Step 1.5: Bilateral filter for edge-preserving noise reduction
-    if (bilateralSpatial > 0) {
-        gray = bilateralFilter(gray, bilateralSpatial, bilateralIntensity);
-    }
+    // Step 1.5: Pre-filtering - remove fine texture before edge detection
+    // Uncomment ONE of these to test:
+    gray = medianFilter(gray, 1);  // 3x3 median - removes speckles
+    // gray = boxBlur(gray, 1);       // 3x3 box blur - gentle smoothing
     
     // Step 2: Difference of Gaussians
     float sigmaSmall = blurSigma / sigmaRatio;

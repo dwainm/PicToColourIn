@@ -47,14 +47,14 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test hysteresis thresholding for cleaner edges
+// Parameter variants - test with 3x3 median pre-filter
 const VARIANTS = [
-  // Hysteresis-based variants
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-7-5.5' },
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-7-6' },
-  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-7.5-6.5' },
-  { blurRadius: 6.5, edgeIntensity: 6, sigmaRatio: 1.4, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-6.5-6' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.6, closeRadius: 0, bilateralSpatial: 0, label: 'hyst-8-6' },
+  // With 3x3 median pre-filter
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'median-7-6' },
+  { blurRadius: 7, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'median-7-6.5' },
+  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'median-7.5-6.5' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'median-8-6' },
+  { blurRadius: 8, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 0, label: 'median-8-7' },
 ];
 
 async function compileNative() {

@@ -61,6 +61,12 @@ Image bilateralFilter(const Image& src, float spatialSigma, float intensitySigma
 // Non-maximum suppression for edge thinning
 Image nonMaxSuppress(const Image& src);
 
+// Median filter for noise removal
+Image medianFilter(const Image& src, int radius);
+
+// Box blur for fast noise reduction  
+Image boxBlur(const Image& src, int radius);
+
 // Adaptive thresholding
 Image adaptiveThreshold(const Image& src, int windowSize, float c);
 
