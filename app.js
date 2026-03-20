@@ -1,25 +1,33 @@
 /**
- * PicToColourIn App - Main Application Logic
+ * PicToColourIn App - WASM-powered Version
+ * Uses C++ compiled to WASM for high-quality image processing
+ * Falls back to WebGL if WASM unavailable
  */
 
 class ColoringApp {
     constructor() {
-        this.processor = null;
         this.sourceImage = null;
+        this.currentJobId = null;
+        this.isProcessing = false;
+        this.processor = null;
+        
+        // Optimized params for C++ implementation (target: 7/10)
         this.processingParams = {
-            blurRadius: 3.6,
-            edgeIntensity: 1.42,
-            threshold: 0.175,
-            sigmaRatio: 3.6
+            blurRadius: 3.6,        // Large blur for wide edges
+            edgeIntensity: 1.42,    // From our best 5/10 result
+            sigmaRatio: 3.6,        // Large ratio for better DoG
+            closeRadius: 1,         // Connect broken lines
+            outputMin: 0.15,        // Slightly darker minimum
+            outputMax: 0.85         // Slightly darker maximum
         };
         
         this.init();
     }
 
-    init() {
+    async init() {
         this.cacheElements();
         this.bindEvents();
-        this.initWebGL();
+        await this.initProcessor();
     }
 
     cacheElements() {
@@ -35,22 +43,26 @@ class ColoringApp {
         this.sourceCanvas = document.getElementById('sourceCanvas');
         this.outputCanvas = document.getElementById('outputCanvas');
         this.loadingOverlay = document.getElementById('loadingOverlay');
+        this.processingStatus = document.getElementById('processingStatus');
         
-        // Controls
+        // Controls - updated for C++ params
         this.blurSlider = document.getElementById('blurSlider');
         this.edgeSlider = document.getElementById('edgeSlider');
-        this.thresholdSlider = document.getElementById('thresholdSlider');
+        this.closeSlider = document.getElementById('closeSlider'); // New control
         
         // Value displays
         this.blurValue = document.getElementById('blurValue');
         this.edgeValue = document.getElementById('edgeValue');
-        this.thresholdValue = document.getElementById('thresholdValue');
+        this.closeValue = document.getElementById('closeValue');
         
         // Buttons
         this.newImageBtn = document.getElementById('newImageBtn');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.pdfBtn = document.getElementById('pdfBtn');
         this.printBtn = document.getElementById('printBtn');
+        
+        // WASM indicator
+        this.wasmIndicator = document.getElementById('wasmIndicator');
     }
 
     bindEvents() {
@@ -58,58 +70,88 @@ class ColoringApp {
         this.dropZone.addEventListener('click', () => this.fileInput.click());
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         
-        // Drag and drop
+        // Drag & drop
         this.dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            this.dropZone.classList.add('drag-over');
+            this.dropZone.classList.add('dragover');
         });
         
         this.dropZone.addEventListener('dragleave', () => {
-            this.dropZone.classList.remove('drag-over');
+            this.dropZone.classList.remove('dragover');
         });
         
         this.dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            this.dropZone.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.loadImage(files[0]);
+            this.dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                this.loadImage(file);
             }
         });
         
         // Control events
-        this.blurSlider.addEventListener('input', (e) => {
+        this.blurSlider?.addEventListener('input', (e) => {
             this.processingParams.blurRadius = parseFloat(e.target.value);
-            this.blurValue.textContent = e.target.value;
+            if (this.blurValue) {
+                this.blurValue.textContent = this.processingParams.blurRadius.toFixed(1);
+            }
             this.debouncedProcess();
         });
         
-        this.edgeSlider.addEventListener('input', (e) => {
+        this.edgeSlider?.addEventListener('input', (e) => {
             this.processingParams.edgeIntensity = parseFloat(e.target.value);
-            this.edgeValue.textContent = e.target.value;
+            if (this.edgeValue) {
+                this.edgeValue.textContent = this.processingParams.edgeIntensity.toFixed(1);
+            }
             this.debouncedProcess();
         });
         
-        this.thresholdSlider.addEventListener('input', (e) => {
-            this.processingParams.threshold = parseFloat(e.target.value);
-            this.thresholdValue.textContent = e.target.value;
+        this.closeSlider?.addEventListener('input', (e) => {
+            this.processingParams.closeRadius = parseInt(e.target.value);
+            if (this.closeValue) {
+                this.closeValue.textContent = this.processingParams.closeRadius;
+            }
             this.debouncedProcess();
         });
         
-        // Action buttons
-        this.newImageBtn.addEventListener('click', () => this.reset());
-        this.downloadBtn.addEventListener('click', () => this.download());
-        this.pdfBtn.addEventListener('click', () => this.downloadPDF());
-        this.printBtn.addEventListener('click', () => this.print());
+        // Button events
+        this.newImageBtn?.addEventListener('click', () => this.reset());
+        
+        this.downloadBtn?.addEventListener('click', () => this.download());
+        this.pdfBtn?.addEventListener('click', () => this.downloadPDF());
+        this.printBtn?.addEventListener('click', () => this.print());
     }
 
-    initWebGL() {
+    async initProcessor() {
         try {
-            this.processor = new WebGLProcessor();
+            // Try to load WASM processor
+            const { WasmProcessor } = await import('./wasm-processor.js');
+            this.processor = new WasmProcessor();
+            await this.processor.init();
+            
+            if (this.processor.fallbackMode) {
+                this.showStatus('Using WebGL (WASM unavailable)', 'info');
+            } else {
+                this.showStatus('✓ High-performance WASM loaded', 'success');
+                console.log('WASM processor ready');
+            }
+            
         } catch (err) {
-            console.error('WebGL initialization failed:', err);
-            alert('Sorry, your browser does not support WebGL which is required for this app.');
+            console.warn('WASM init failed, using WebGL:', err);
+            this.showStatus('Using WebGL processing', 'info');
+            
+            // Fallback to WebGL
+            const { WebGLProcessor } = await import('./webgl-processor.js');
+            this.processor = new WebGLProcessor();
+            await this.processor.init();
         }
+    }
+
+    debouncedProcess() {
+        if (this.processTimeout) {
+            clearTimeout(this.processTimeout);
+        }
+        this.processTimeout = setTimeout(() => this.process(), 150);
     }
 
     handleFileSelect(e) {
@@ -121,154 +163,212 @@ class ColoringApp {
 
     async loadImage(file) {
         try {
-            // Show loading state
-            this.dropZone.style.opacity = '0.5';
+            // Load and display immediately
+            this.sourceImage = await this.createImageBitmap(file);
+            this.displaySourceImage();
             
-            await this.processor.loadImage(file);
-            
-            // Process image
-            this.process();
-            
-            // Switch to editor view
+            // Show editor
             this.uploadSection.style.display = 'none';
             this.editorSection.style.display = 'flex';
             
-            // Copy result to visible canvas
-            this.updateOutputCanvas();
+            // Show processing state
+            this.showProcessingState();
+            
+            // Process in background
+            await this.process();
             
         } catch (err) {
             console.error('Error loading image:', err);
             alert('Error loading image. Please try another file.');
-        } finally {
-            this.dropZone.style.opacity = '1';
         }
     }
 
-    process() {
-        if (!this.processor) return;
-        
-        // Show loading
-        this.loadingOverlay.style.display = 'flex';
-        
-        // Use requestAnimationFrame to allow UI to update before processing
-        requestAnimationFrame(() => {
-            // Process with WebGL
-            this.processor.process(this.processingParams);
-            
-            // Update visible canvas
-            this.updateOutputCanvas();
-            
-            // Hide loading
-            this.loadingOverlay.style.display = 'none';
+    createImageBitmap(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
         });
     }
 
-    debouncedProcess() {
-        // Debounce for slider dragging
-        if (this.processTimeout) {
-            clearTimeout(this.processTimeout);
-        }
-        this.processTimeout = setTimeout(() => this.process(), 50);
+    displaySourceImage() {
+        // Draw preview
+        this.sourceCanvas.width = this.sourceImage.width;
+        this.sourceCanvas.height = this.sourceImage.height;
+        const ctx = this.sourceCanvas.getContext('2d');
+        ctx.drawImage(this.sourceImage, 0, 0);
+        
+        // Set output canvas size
+        this.outputCanvas.width = this.sourceImage.width;
+        this.outputCanvas.height = this.sourceImage.height;
     }
 
-    updateOutputCanvas() {
-        const glCanvas = this.processor.getOutputCanvas();
+    showProcessingState() {
+        this.isProcessing = true;
+        this.loadingOverlay.style.display = 'flex';
+        if (this.processingStatus) {
+            this.processingStatus.textContent = 'Creating coloring page...';
+        }
         
-        // Match dimensions
-        this.outputCanvas.width = glCanvas.width;
-        this.outputCanvas.height = glCanvas.height;
+        if (this.downloadBtn) this.downloadBtn.disabled = true;
+        if (this.pdfBtn) this.pdfBtn.disabled = true;
+        if (this.printBtn) this.printBtn.disabled = true;
+    }
+
+    hideProcessingState() {
+        this.isProcessing = false;
+        this.loadingOverlay.style.display = 'none';
         
-        // Draw WebGL result to visible canvas
+        if (this.downloadBtn) this.downloadBtn.disabled = false;
+        if (this.pdfBtn) this.pdfBtn.disabled = false;
+        if (this.printBtn) this.printBtn.disabled = false;
+    }
+
+    async process() {
+        if (!this.processor || !this.sourceImage || this.isProcessing) {
+            return;
+        }
+        
+        this.showProcessingState();
+        
+        try {
+            // Get image data from source canvas
+            const ctx = this.sourceCanvas.getContext('2d');
+            const imageData = ctx.getImageData(
+                0, 0, 
+                this.sourceCanvas.width, 
+                this.sourceCanvas.height
+            );
+            
+            // Estimate time
+            const estTime = this.processor.estimateTime?.(
+                this.sourceCanvas.width, 
+                this.sourceCanvas.height
+            ) || 500;
+            
+            console.log(`Estimated processing time: ${estTime}ms`);
+            
+            // Process
+            const startTime = performance.now();
+            const result = await this.processor.process(imageData, this.processingParams);
+            const processTime = performance.now() - startTime;
+            
+            console.log(`Total processing: ${processTime.toFixed(1)}ms`);
+            
+            // Display result
+            this.updateOutputCanvas(result);
+            
+            // Update status
+            if (this.processingStatus) {
+                const mode = this.processor.fallbackMode ? 'WebGL' : 'WASM';
+                this.processingStatus.textContent = `Done in ${processTime.toFixed(0)}ms (${mode})`;
+                setTimeout(() => this.hideProcessingState(), 500);
+            } else {
+                this.hideProcessingState();
+            }
+            
+        } catch (err) {
+            console.error('Processing error:', err);
+            this.processingStatus.textContent = 'Error. Try different settings.';
+            this.hideProcessingState();
+        }
+    }
+
+    updateOutputCanvas(imageData) {
+        if (!imageData) return;
+        
         const ctx = this.outputCanvas.getContext('2d');
-        ctx.drawImage(glCanvas, 0, 0);
+        
+        if (imageData instanceof ImageData) {
+            ctx.putImageData(imageData, 0, 0);
+        }
+    }
+
+    showStatus(message, type = 'info') {
+        if (this.wasmIndicator) {
+            this.wasmIndicator.textContent = message;
+            this.wasmIndicator.className = `status-${type}`;
+            this.wasmIndicator.style.display = 'block';
+        }
+        console.log(`[${type}] ${message}`);
     }
 
     download() {
-        if (!this.processor) return;
-        
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        this.processor.download(`coloring-page-${timestamp}.png`);
+        const link = document.createElement('a');
+        link.download = `coloring-page-${Date.now()}.png`;
+        link.href = this.outputCanvas.toDataURL('image/png');
+        link.click();
     }
 
     downloadPDF() {
-        if (!this.processor) return;
+        const { jsPDF } = window.jspdf || {};
         
-        const canvas = this.processor.getOutputCanvas();
-        const imgData = canvas.toDataURL('image/png');
+        if (!jsPDF) {
+            this.download();  // Fallback to PNG
+            return;
+        }
         
-        // Create a print-optimized window
-        const printWindow = window.open('', '_blank');
-        const timestamp = new Date().toISOString().slice(0, 10);
+        const imgData = this.outputCanvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: this.outputCanvas.width > this.outputCanvas.height ? 'l' : 'p',
+            unit: 'px',
+            format: [this.outputCanvas.width, this.outputCanvas.height]
+        });
         
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>PicToColourIn - Coloring Page</title>
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { 
-                        display: flex; 
-                        justify-content: center; 
-                        align-items: center; 
-                        min-height: 100vh;
-                        background: white;
-                    }
-                    img { 
-                        max-width: 100%; 
-                        max-height: 100vh;
-                        object-fit: contain;
-                    }
-                    @media print {
-                        body { margin: 0; }
-                        img { max-height: 100vh; width: auto; }
-                    }
-                </style>
-            </head>
-            <body>
-                <img src="${imgData}" alt="Coloring Page">
-                <script>
-                    // Auto-trigger print dialog
-                    setTimeout(() => {
-                        window.print();
-                    }, 250);
-                <\/script>
-            </body>
-            </html>
-        `);
-        
-        printWindow.document.close();
+        pdf.addImage(imgData, 'PNG', 0, 0, this.outputCanvas.width, this.outputCanvas.height);
+        pdf.save(`coloring-page-${Date.now()}.pdf`);
     }
 
     print() {
-        window.print();
+        const printWindow = window.open('', '_blank');
+        const imgData = this.outputCanvas.toDataURL('image/png');
+        
+        printWindow.document.write(`
+            <html>
+                <head><title>Print Coloring Page</title></head>
+                <body style="margin:0; display:flex; justify-content:center; align-items:center;">
+                    <img src="${imgData}" style="max-width:100%; max-height:100vh;">
+                    <script>
+                        window.onload = () => {
+                            setTimeout(() => { 
+                                window.print(); 
+                                setTimeout(() => window.close(), 100);
+                            }, 100);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
     }
 
     reset() {
-        // Reset UI
         this.uploadSection.style.display = 'block';
         this.editorSection.style.display = 'none';
         
-        // Reset file input
+        this.sourceImage = null;
+        this.currentJobId = null;
+        
         this.fileInput.value = '';
         
-        // Reset sliders to defaults (DoG tuned)
-        this.blurSlider.value = 2;
-        this.edgeSlider.value = 0.8;
-        this.thresholdSlider.value = 0.25;
-        
-        // Reset values display
-        this.blurValue.textContent = '2';
-        this.edgeValue.textContent = '0.8';
-        this.thresholdValue.textContent = '0.25';
-        
-        // Reset params (DoG: Difference of Gaussians) - best tuned params
+        // Reset params to defaults
         this.processingParams = {
             blurRadius: 3.6,
             edgeIntensity: 1.42,
-            threshold: 0.175,
-            sigmaRatio: 3.6
+            sigmaRatio: 3.6,
+            closeRadius: 1,
+            outputMin: 0.15,
+            outputMax: 0.85
         };
+        
+        // Update sliders if they exist
+        if (this.blurSlider) this.blurSlider.value = this.processingParams.blurRadius;
+        if (this.blurValue) this.blurValue.textContent = this.processingParams.blurRadius.toFixed(1);
+        if (this.edgeSlider) this.edgeSlider.value = this.processingParams.edgeIntensity;
+        if (this.edgeValue) this.edgeValue.textContent = this.processingParams.edgeIntensity.toFixed(1);
+        if (this.closeSlider) this.closeSlider.value = this.processingParams.closeRadius;
+        if (this.closeValue) this.closeValue.textContent = this.processingParams.closeRadius;
     }
 }
 
