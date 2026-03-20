@@ -47,16 +47,16 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test smoothing effect on waviness
+// Parameter variants - final tuning around smooth-7-5.5
 const VARIANTS = [
-  // Varying blur radius with smoothing
-  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7.5-5.5' },
-  { blurRadius: 8, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-8-5.5' },
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7-5.5' },
+  // Best visual: smooth-7-5.5
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'best-7-5.5' },
   
-  // Higher intensity to compensate for smoothing
-  { blurRadius: 7.5, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7.5-5.8' },
-  { blurRadius: 8, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-8-5.8' },
+  // Fine variations
+  { blurRadius: 7, edgeIntensity: 5.6, sigmaRatio: 1.5, closeRadius: 0, label: 'best-7-5.6' },
+  { blurRadius: 7, edgeIntensity: 5.4, sigmaRatio: 1.5, closeRadius: 0, label: 'best-7-5.4' },
+  { blurRadius: 6.9, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'best-6.9-5.5' },
+  { blurRadius: 7.1, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'best-7.1-5.5' },
 ];
 
 async function compileNative() {
