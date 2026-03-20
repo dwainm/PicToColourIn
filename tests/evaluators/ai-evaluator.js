@@ -23,8 +23,9 @@ export class AIColoringEvaluator {
    * @param {string} processedPath - Path to processed coloring page
    * @param {string} criteria - Evaluation criteria
    * @param {string|null} originalPath - Optional path to original photo for comparison
+   * @param {object|null} params - Optional processing parameters for context
    */
-  async evaluate(processedPath, criteria = 'standard', originalPath = null) {
+  async evaluate(processedPath, criteria = 'standard', originalPath = null, params = null) {
     const processedBuffer = await fs.readFile(processedPath);
     const processedBase64 = processedBuffer.toString('base64');
     
@@ -38,14 +39,18 @@ export class AIColoringEvaluator {
       }
     }
 
+    const paramsContext = params 
+      ? `Processing: blur=${params.blurRadius}, intensity=${params.edgeIntensity}, sigmaRatio=${params.sigmaRatio}`
+      : '';
+
     const criteriaPrompts = {
       standard: originalBase64 
-        ? `I have TWO images: 1) Original photo 2) Coloring page version. Rate the coloring page 1-10 for how well it captures the subject with clean, colorable outlines. CRITICAL: Respond ONLY with a number, then brief reason comparing to original. Examples: "7 - captures dog well, good outlines" or "4 - lost facial details, faint lines".`
-        : `Rate this coloring page 1-10. CRITICAL: Respond with ONLY a number, then brief reason. Examples: "7 - good outlines, usable" or "4 - faint lines, hard to color".`,
+        ? `I have TWO images: 1) Original photo 2) Coloring page version. ${paramsContext} Rate the coloring page 1-10 for how well it captures the subject with clean, colorable outlines. CRITICAL: Respond ONLY with a number, then brief reason comparing to original. Examples: "7 - captures dog well, good outlines" or "4 - lost facial details, faint lines".`
+        : `Rate this coloring page 1-10. ${paramsContext} CRITICAL: Respond with ONLY a number, then brief reason. Examples: "7 - good outlines, usable" or "4 - faint lines, hard to color".`,
 
       strict: originalBase64
-        ? `Compare original photo to coloring page. Rate harshly 1-10. ONLY number + brief reason. Example: "5 - lost detail, broken lines". Did it preserve key features? 10 words max.`
-        : `Rate harshly 1-10. ONLY number + brief reason. Example: "5 - broken lines, noisy". Respond in 10 words max.`,
+        ? `Compare original photo to coloring page. ${paramsContext} Rate harshly 1-10. ONLY number + brief reason. Example: "5 - lost detail, broken lines". Did it preserve key features? 10 words max.`
+        : `Rate harshly 1-10. ${paramsContext} ONLY number + brief reason. Example: "5 - broken lines, noisy". Respond in 10 words max.`,
     };
 
     const messages = [{

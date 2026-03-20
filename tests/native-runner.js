@@ -170,7 +170,7 @@ async function main() {
         console.log('✓ (skipped AI)');
         results.push({ params, outputPath: pngOutputPath, evaluation: { overall: 0 } });
       } else {
-        const evalResult = await evaluator.evaluate(pngOutputPath, 'standard', TEST_IMAGE);
+        const evalResult = await evaluator.evaluate(pngOutputPath, 'standard', TEST_IMAGE, params);
         console.log(`${evalResult.overall}/10`);
         results.push({ params, outputPath: pngOutputPath, evaluation: evalResult });
       }
