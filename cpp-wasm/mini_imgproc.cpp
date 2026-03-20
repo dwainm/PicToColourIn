@@ -555,6 +555,7 @@ Image processToColoringPage(
 
 // NEW: Simplified adaptive threshold - just like OpenCV
 // Outputs regions (like THRESH_BINARY) - white objects on black background
+// NEW: Added auto-contrast for low-contrast images
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn,
     int width,
@@ -568,10 +569,14 @@ Image processToColoringPageAdaptive(
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
     
-    // Step 2: Adaptive threshold - exact OpenCV algorithm
-    Image thresh = adaptiveThreshold(gray, windowSize, c, method);
+    // Step 2: Auto-contrast stretch (helps low-contrast photos)
+    // Stretches histogram to use full 0-255 range
+    Image contrast = stretchContrast(gray, 0.0f, 100.0f);
     
-    // Step 3: Output like OpenCV - regions ready to color
+    // Step 3: Adaptive threshold - exact OpenCV algorithm
+    Image thresh = adaptiveThreshold(contrast, windowSize, c, method);
+    
+    // Step 4: Output like OpenCV - regions ready to color
     // (Thresh is 255=white/foreground, 0=black/background)
     Image result(width, height);
     float minOut = outputMin * 255.0f;
