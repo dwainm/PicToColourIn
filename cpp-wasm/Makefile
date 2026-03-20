@@ -4,7 +4,7 @@
 # Emscripten settings
 EMCC = emcc
 OPTIMIZATION = -O3
-EXPORTED_FUNCTIONS = -s EXPORTED_FUNCTIONS="['_x9', '_y2', '_z3']"
+EXPORTED_FUNCTIONS = -s EXPORTED_FUNCTIONS="['_x9', '_y2', '_z3', '_malloc', '_free']"
 EXPORTED_RUNTIME = -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'getValue', 'setValue', 'UTF8ToString', 'stringToUTF8', 'HEAP8', 'HEAPU8']"
 
 # Build settings
