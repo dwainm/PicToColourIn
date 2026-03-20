@@ -92,21 +92,12 @@ class WasmProcessor {
             console.log('processImage wrapped:', !!this.processImageFn);
             
             // Adaptive threshold function (OpenCV-style) - PRODUCTION DEFAULT
-            // Try both with and without underscore
-            this.processImageAdaptiveFn = this.module.cwrap('_processImageAdaptive', 'number', [
-                'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
-            ]);
-            if (!this.processImageAdaptiveFn) {
-                this.processImageAdaptiveFn = this.module.cwrap('processImageAdaptive', 'number', [
-                    'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
-                ]);
-            }
-            // Direct fallback: use the exported function directly
-            if (!this.processImageAdaptiveFn && this.module._processImageAdaptive) {
-                console.log('Using direct _processImageAdaptive reference');
-                this.processImageAdaptiveFn = this.module._processImageAdaptive;
-            }
-            console.log('processImageAdaptive wrapped:', !!this.processImageAdaptiveFn);
+            // Use direct reference (faster than cwrap anyway)
+            this.processImageAdaptiveFn = this.module._processImageAdaptive;
+            console.log('processImageAdaptive direct:', !!this.processImageAdaptiveFn);
+            
+            this.freeImageFn = this.module.cwrap('freeProcessedImage', null, ['number']);
+            this.estimateTimeFn = this.module.cwrap('estimateProcessingTime', 'number', ['number', 'number']);
             
             // DEBUG: Check what's actually exported
             console.log('Module keys:', Object.keys(this.module).filter(k => k.includes('process')));
