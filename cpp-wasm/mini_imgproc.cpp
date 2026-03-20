@@ -13,8 +13,7 @@ namespace imgproc {
 Image colorEdgeLab(const uint8_t* rgba, int width, int height, float chromaWeight);
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn, int width, int height,
-    int windowSize, float c, float blurSigma, int closeRadius,
-    float outputMin, float outputMax
+    int windowSize, float c, float outputMin, float outputMax
 );
 
 Image rgbToGray(const uint8_t* rgba, int width, int height) {
@@ -480,51 +479,50 @@ Image processToColoringPage(
     return result;
 }
 
-// NEW: Adaptive threshold pipeline - creates filled regions instead of edges
-// Compares each pixel to neighborhood average - perfect for coloring books!
+// NEW: Simplified adaptive threshold - just like OpenCV
+// Creates boundaries between light/dark regions
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn,
     int width,
     int height,
     int windowSize,      // Neighborhood size (e.g., 15 for 15x15 window)
     float c,             // Constant subtracted from mean (higher = more edges)
-    float blurSigma,     // Pre-blur to reduce noise (0 to disable)
-    int closeRadius,     // Morphological closing to connect regions
     float outputMin,     // 0.0 for white
     float outputMax      // 1.0 for black
 ) {
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
     
-    // Step 2: Optional pre-blur to reduce noise
-    if (blurSigma > 0.5f) {
-        gray = gaussianBlur(gray, blurSigma);
-    }
-    
-    // Step 3: Adaptive threshold - MAGIC HAPPENS HERE
-    // Each pixel compared to local neighborhood mean
+    // Step 2: Adaptive threshold - pure and simple
     Image thresh = adaptiveThreshold(gray, windowSize, c);
     
-    // Step 4: Morphological closing to connect small gaps
-    if (closeRadius > 0) {
-        thresh = morphologicalClose(thresh, closeRadius);
-    }
-    
-    // Step 5: Invert so regions are white (to color) and boundaries are black
-    // Also scale to output range
+    // Step 3: Convert region boundaries to black lines on white background
     Image result(width, height);
     float minOut = outputMin * 255.0f;
     float maxOut = outputMax * 255.0f;
     float outRange = maxOut - minOut;
     
-    for (int i = 0; i < width * height; ++i) {
-        // thresh is 0 or 255; invert so edges (threshold crossings) are dark
-        float inverted = 255.0f - thresh.data[i];
-        float scaled = minOut + (inverted / 255.0f) * outRange;
-        result.data[i] = static_cast<uint8_t>(std::min(255.0f, std::max(0.0f, scaled)));
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            uint8_t center = thresh.at(x, y);
+            
+            // Check if at boundary between black/white regions
+            uint8_t n = (y > 0) ? thresh.at(x, y-1) : center;
+            uint8_t s = (y < height-1) ? thresh.at(x, y+1) : center;
+            uint8_t e = (x < width-1) ? thresh.at(x+1, y) : center;
+            uint8_t w = (x > 0) ? thresh.at(x-1, y) : center;
+            
+            // Boundary = edge = black line
+            bool isEdge = (center != n) || (center != s) || (center != e) || (center != w);
+            
+            float val = isEdge ? 0.0f : 255.0f;  // Black edge, white fill
+            float scaled = minOut + (val / 255.0f) * outRange;
+            result.at(x, y) = static_cast<uint8_t>(std::min(255.0f, std::max(0.0f, scaled)));
+        }
     }
     
     return result;
+}
 }
 
 // Color-aware edge detection - detects changes in hue/saturation, not just brightness

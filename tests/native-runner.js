@@ -47,20 +47,15 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - fine-tune adaptive threshold around 21-7
+// Parameter variants - pure adaptive threshold (simplified)
 const VARIANTS = [
-  // Window size variations
-  { type: 'adaptive', windowSize: 21, c: 7, blurSigma: 1, closeRadius: 1, label: 'adaptive-21-7' },
-  { type: 'adaptive', windowSize: 25, c: 7, blurSigma: 1, closeRadius: 1, label: 'adaptive-25-7' },
-  { type: 'adaptive', windowSize: 19, c: 7, blurSigma: 1, closeRadius: 1, label: 'adaptive-19-7' },
-  
-  // C variations (higher = more edges)
-  { type: 'adaptive', windowSize: 21, c: 9, blurSigma: 1, closeRadius: 1, label: 'adaptive-21-9' },
-  { type: 'adaptive', windowSize: 21, c: 5, blurSigma: 1, closeRadius: 1, label: 'adaptive-21-5' },
-  
-  // Blur variations
-  { type: 'adaptive', windowSize: 21, c: 7, blurSigma: 2, closeRadius: 1, label: 'adaptive-21-7-blur2' },
-  { type: 'adaptive', windowSize: 21, c: 7, blurSigma: 0, closeRadius: 1, label: 'adaptive-21-7-noblur' },
+  // Just windowSize and c - pure adaptive like OpenCV
+  { type: 'adaptive', windowSize: 15, c: 5, label: 'adapt-15-5' },
+  { type: 'adaptive', windowSize: 21, c: 7, label: 'adapt-21-7' },
+  { type: 'adaptive', windowSize: 25, c: 7, label: 'adapt-25-7' },
+  { type: 'adaptive', windowSize: 21, c: 5, label: 'adapt-21-5' },
+  { type: 'adaptive', windowSize: 25, c: 5, label: 'adapt-25-5' },
+  { type: 'adaptive', windowSize: 31, c: 10, label: 'adapt-31-10' },
 ];
 
 async function compileNative() {
@@ -94,18 +89,16 @@ async function runNativeProcess(inputPath, outputPath, params) {
     let args;
     
     if (params.type === 'adaptive') {
-      // Adaptive threshold mode
+      // Simplified adaptive - just windowSize and c
       args = [
         'adaptive',
         inputPath,
         outputPath,
         params.windowSize.toString(),
-        params.c.toString(),
-        params.blurSigma.toString(),
-        params.closeRadius.toString()
+        params.c.toString()
       ];
     } else {
-      // DoG mode (default)
+      // DoG mode
       args = [
         'dog',
         inputPath,

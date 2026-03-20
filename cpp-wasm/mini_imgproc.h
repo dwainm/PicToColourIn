@@ -98,15 +98,13 @@ Image processToColoringPage(
     float bilateralIntensity = 30.0f // bilateral intensity sigma
 );
 
-// NEW: Adaptive threshold pipeline - creates filled regions instead of edges
+// NEW: Simplified adaptive threshold - creates region boundaries (lines)
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn,
     int width,
     int height,
     int windowSize,      // Neighborhood size (e.g., 15 for 15x15 window)
     float c,             // Constant subtracted from mean (higher = more edges)
-    float blurSigma,     // Pre-blur to reduce noise (0 to disable)
-    int closeRadius,     // Morphological closing to connect regions
     float outputMin,     // 0.0 for white
     float outputMax      // 1.0 for black
 );

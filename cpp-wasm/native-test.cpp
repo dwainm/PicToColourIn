@@ -113,16 +113,14 @@ int main(int argc, char* argv[]) {
         std::cerr << "Wrote: " << outputPath << "\n";
         
     } else if (strcmp(mode, "adaptive") == 0) {
-        if (argc < 7) {
-            std::cerr << "adaptive mode needs: input.ppm output.ppm windowSize c blurSigma closeRadius\n";
+        if (argc < 6) {
+            std::cerr << "adaptive mode needs: input.ppm output.ppm windowSize c\n";
             return 1;
         }
         const char* inputPath = argv[2];
         const char* outputPath = argv[3];
         int windowSize = std::stoi(argv[4]);
         float c = std::stof(argv[5]);
-        float blurSigma = std::stof(argv[6]);
-        int closeRadius = std::stoi(argv[7]);
         
         // Read input
         std::vector<uint8_t> rgba;
@@ -138,8 +136,7 @@ int main(int argc, char* argv[]) {
         // Process with adaptive threshold
         imgproc::Image result = imgproc::processToColoringPageAdaptive(
             rgba.data(), width, height,
-            windowSize, c, blurSigma, closeRadius,
-            0.0f, 1.0f
+            windowSize, c, 0.0f, 1.0f
         );
         
         // Write output
