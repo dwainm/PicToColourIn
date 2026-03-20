@@ -47,16 +47,20 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test adaptive threshold vs DoG
+// Parameter variants - fine-tune adaptive threshold around 21-7
 const VARIANTS = [
-  // Adaptive threshold: windowSize, c, blurSigma, closeRadius
-  { type: 'adaptive', windowSize: 15, c: 5, blurSigma: 1, closeRadius: 1, label: 'adaptive-15-5' },
+  // Window size variations
   { type: 'adaptive', windowSize: 21, c: 7, blurSigma: 1, closeRadius: 1, label: 'adaptive-21-7' },
-  { type: 'adaptive', windowSize: 15, c: 3, blurSigma: 2, closeRadius: 1, label: 'adaptive-15-3-blur2' },
-  { type: 'adaptive', windowSize: 25, c: 10, blurSigma: 0, closeRadius: 2, label: 'adaptive-25-10' },
+  { type: 'adaptive', windowSize: 25, c: 7, blurSigma: 1, closeRadius: 1, label: 'adaptive-25-7' },
+  { type: 'adaptive', windowSize: 19, c: 7, blurSigma: 1, closeRadius: 1, label: 'adaptive-19-7' },
   
-  // Baseline DoG for comparison
-  { type: 'dog', blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'dog-7-5.5' },
+  // C variations (higher = more edges)
+  { type: 'adaptive', windowSize: 21, c: 9, blurSigma: 1, closeRadius: 1, label: 'adaptive-21-9' },
+  { type: 'adaptive', windowSize: 21, c: 5, blurSigma: 1, closeRadius: 1, label: 'adaptive-21-5' },
+  
+  // Blur variations
+  { type: 'adaptive', windowSize: 21, c: 7, blurSigma: 2, closeRadius: 1, label: 'adaptive-21-7-blur2' },
+  { type: 'adaptive', windowSize: 21, c: 7, blurSigma: 0, closeRadius: 1, label: 'adaptive-21-7-noblur' },
 ];
 
 async function compileNative() {
