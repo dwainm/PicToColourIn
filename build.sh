@@ -4,7 +4,12 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
+
 echo "Building PicToColourIn.com..."
+echo "Working directory: $(pwd)"
 
 # Build WASM if Emscripten is available
 if command -v emcc &> /dev/null; then
@@ -13,7 +18,7 @@ if command -v emcc &> /dev/null; then
     make clean
     make verify
     make
-    cd ..
+    cd "$SCRIPT_DIR"
     echo "✓ WASM build complete"
 else
     echo "⚠ Emscripten not found, skipping WASM build"
