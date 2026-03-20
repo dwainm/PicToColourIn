@@ -182,49 +182,42 @@ async function main() {
     ]
   });
   
-  console.log(`🧪 Testing ${VARIANTS.length} parameter combinations...\n`);
+  console.log(`🧪 Testing ${VARIANTS.length} parameter combinations in parallel...\n`);
   
   const evaluator = new AIColoringEvaluator();
-  const results = [];
   
-  for (const params of VARIANTS) {
-    process.stdout.write(`  ${params.label}... `);
-    
+  // Run all variants in parallel
+  const promises = VARIANTS.map(async (params) => {
     let attempts = 0;
     const maxAttempts = 3;
-    let success = false;
     
-    while (attempts < maxAttempts && !success) {
+    while (attempts < maxAttempts) {
       attempts++;
-      if (attempts > 1) {
-        process.stdout.write(`(retry ${attempts}/${maxAttempts})... `);
-      }
       
       try {
         const path = await renderVariant(browser, params, TEST_IMAGE);
         
         if (process.env.SKIP_AI) {
-          console.log('✓ rendered (skipped AI eval)');
-          results.push({ params, path, evaluation: { overall: 0 } });
-          success = true;
+          console.log(`  ${params.label}: ✓ rendered (skipped AI eval)`);
+          return { params, path, evaluation: { overall: 0 } };
         } else {
           const evalResult = await evaluator.evaluate(path, 'standard', TEST_IMAGE);
-          results.push({ params, path, evaluation: evalResult });
-          console.log(`✓ ${evalResult.overall}/10`);
-          success = true;
+          console.log(`  ${params.label}: ✓ ${evalResult.overall}/10`);
+          return { params, path, evaluation: evalResult };
         }
         
       } catch (err) {
         if (attempts < maxAttempts) {
-          // Wait before retry (exponential backoff: 1s, 2s)
           await new Promise(r => setTimeout(r, attempts * 1000));
         } else {
-          // Final attempt failed
-          console.log(`✗ ${err.message}`);
+          console.log(`  ${params.label}: ✗ ${err.message}`);
+          return { params, path: null, evaluation: { overall: 0 }, error: err.message };
         }
       }
     }
-  }
+  });
+  
+  const results = await Promise.all(promises);
   
   await browser.close();
   server.close();
