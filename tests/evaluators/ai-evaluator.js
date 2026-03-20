@@ -124,18 +124,26 @@ export class AIColoringEvaluator {
       console.log('  📝 Last part:', lastLines.substring(0, 100));
     }
 
-    // Extract rating: look for pattern like "7 -" or "Rating: 7" or standalone number
-    // Avoid matching "1-10" by looking for number at start or after common prefixes
-    const numberMatch = text.match(/(?:^|\b)([0-9]|10)(?:\s*-|\s*\/|\s*out|\s*of|\s*$|\s+\w)/) || 
-                        text.match(/rating[:\s]+([0-9]|10)/i) ||
-                        text.match(/score[:\s]+([0-9]|10)/i);
+    // Extract rating: look for the actual rating number
+    // AI may say "6 or 7" or "Let's go with 6" - grab the last number mentioned
+    const allNumbers = text.match(/\b([0-9]|10)\b/g);
+    let score = 1;
     
-    if (!numberMatch) {
-      console.error('Raw response:', text);
-      throw new Error('Could not parse score from AI response');
+    if (allNumbers && allNumbers.length > 0) {
+      // Take the last number (usually the final decision after "Let's go with X")
+      score = parseInt(allNumbers[allNumbers.length - 1], 10);
+      
+      // Sanity check: if we see "6 or 7" pattern, average them
+      const orMatch = text.match(/(\d+)\s+or\s+(\d+)/);
+      if (orMatch) {
+        score = Math.round((parseInt(orMatch[1]) + parseInt(orMatch[2])) / 2);
+      }
     }
     
-    const score = parseInt(numberMatch[1], 10);
+    // Debug what we found
+    if (text.includes('The user wants me to')) {
+      console.log(`  ✅ Extracted ${score}/10 from narration`);
+    }
     
     // Return in expected format
     return {
