@@ -148,7 +148,8 @@ export class AIColoringEvaluator {
     // Return in expected format
     return {
       overall: score,
-      suggestions: [text.slice(0, 100)] // First 100 chars as suggestion
+      suggestions: [text],  // Full AI response for analysis
+      fullResponse: text
     };
   }
 

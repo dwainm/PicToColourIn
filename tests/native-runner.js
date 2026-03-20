@@ -47,15 +47,22 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - fine-tune around 7/10 winner
+// Parameter variants - targeting 9/10 by addressing common issues
 const VARIANTS = [
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-a' },
-  { blurRadius: 7.5, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-b' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-c' },  // 7/10 winner
-  { blurRadius: 8, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-d' },
-  { blurRadius: 8.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-e' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.2, closeRadius: 0, label: 'fine-f' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.8, closeRadius: 0, label: 'fine-g' },
+  // Sharper edges - less blur
+  { blurRadius: 6, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'sharp-a' },
+  { blurRadius: 6.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'sharp-b' },
+  
+  // Higher contrast - boost intensity
+  { blurRadius: 7, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 0, label: 'contrast-a' },
+  { blurRadius: 7, edgeIntensity: 8, sigmaRatio: 1.5, closeRadius: 0, label: 'contrast-b' },
+  
+  // Tighter DoG (smaller sigma ratio = sharper edges)
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.3, closeRadius: 0, label: 'tight-a' },
+  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.3, closeRadius: 0, label: 'tight-b' },
+  
+  // With light morphological closing (connects lines without thickening too much)
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 1, label: 'closed-a' },
 ];
 
 async function compileNative() {
