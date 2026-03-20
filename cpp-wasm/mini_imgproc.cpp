@@ -445,12 +445,17 @@ Image processToColoringPage(
     // Step 2.5: Very light smoothing to reduce waviness without losing detail
     dog = gaussianBlur(dog, 0.5f);
     
-    // Debug: return raw DoG if requested (disabled to avoid dark debug images)
-    // if (debugDogOut) {
-    //     *debugDogOut = dog;
-    // }
+    // Step 2.6: CIELAB color-aware edge detection (detects color boundaries)
+    // Blend: 90% luminance DoG, 10% chrominance edges (catches green leaf vs blue wall)
+    Image colorEdges = colorEdgeLab(rgbaIn, width, height, 0.85f);  // 85% chrominance
+    colorEdges = gaussianBlur(colorEdges, 2.0f);  // Blur to reduce noise
     
-    // Suppress debug output
+    for (int i = 0; i < width * height; ++i) {
+        float blended = 0.90f * dog.data[i] + 0.10f * colorEdges.data[i] * 0.5f;
+        dog.data[i] = static_cast<uint8_t>(std::min(255.0f, blended));
+    }
+    
+    // Debug: return raw DoG if requested (disabled to avoid dark debug images)
     (void)debugDogOut;
     
     // Step 3: Morphological closing (connect broken lines)
@@ -566,6 +571,73 @@ Image removeSmallComponents(const Image& src, int minSize) {
                     result.at(cx, cy) = src.at(cx, cy);
                 }
             }
+        }
+    }
+    
+    return result;
+}
+
+// RGB to CIELAB conversion (simplified D65 illuminant)
+void rgbToLab(float r, float g, float b, float& L, float& a, float& b_lab) {
+    // RGB to XYZ (sRGB, D65)
+    auto toXYZ = [](float c) {
+        c /= 255.0f;
+        c = (c > 0.04045f) ? std::pow((c + 0.055f) / 1.055f, 2.4f) : c / 12.92f;
+        return c * 100.0f;
+    };
+    
+    float X = 0.4124564f * toXYZ(r) + 0.3575761f * toXYZ(g) + 0.1804375f * toXYZ(b);
+    float Y = 0.2126729f * toXYZ(r) + 0.7151522f * toXYZ(g) + 0.0721750f * toXYZ(b);
+    float Z = 0.0193339f * toXYZ(r) + 0.1191920f * toXYZ(g) + 0.9503041f * toXYZ(b);
+    
+    // XYZ to LAB
+    auto f = [](float t) {
+        const float delta = 6.0f / 29.0f;
+        return (t > delta * delta * delta) ? std::pow(t, 1.0f/3.0f) : t / (3.0f * delta * delta) + 4.0f / 29.0f;
+    };
+    
+    float Xn = 95.047f, Yn = 100.0f, Zn = 108.883f;
+    L = 116.0f * f(Y / Yn) - 16.0f;
+    a = 500.0f * (f(X / Xn) - f(Y / Yn));
+    b_lab = 200.0f * (f(Y / Yn) - f(Z / Zn));
+}
+
+// CIELAB-based color edge detection (ignores luminance, only color changes)
+Image colorEdgeLab(const uint8_t* rgba, int width, int height, float chromaWeight) {
+    Image result(width, height);
+    
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int idx = (y * width + x) * 4;
+            float r = rgba[idx], g = rgba[idx + 1], b = rgba[idx + 2];
+            
+            // Current pixel LAB
+            float L, a, b_lab;
+            rgbToLab(r, g, b, L, a, b_lab);
+            
+            // Right neighbor
+            int idxR = (y * width + std::min(x + 1, width - 1)) * 4;
+            float rR = rgba[idxR], gR = rgba[idxR + 1], bR = rgba[idxR + 2];
+            float LR, aR, bR_lab;
+            rgbToLab(rR, gR, bR, LR, aR, bR_lab);
+            
+            // Bottom neighbor
+            int idxB = (std::min(y + 1, height - 1) * width + x) * 4;
+            float rB = rgba[idxB], gB = rgba[idxB + 1], bB = rgba[idxB + 2];
+            float LB, aB, bB_lab;
+            rgbToLab(rB, gB, bB, LB, aB, bB_lab);
+            
+            // Chrominance differences (ignoring L - luminance)
+            float chromaDiffR = std::sqrt((a-aR)*(a-aR) + (b_lab-bR_lab)*(b_lab-bR_lab));
+            float chromaDiffB = std::sqrt((a-aB)*(a-aB) + (b_lab-bB_lab)*(b_lab-bB_lab));
+            float chromaDiff = std::max(chromaDiffR, chromaDiffB);
+            
+            // Luminance difference (for backup)
+            float lumDiff = std::max(std::abs(L - LR), std::abs(L - LB));
+            
+            // Combined: primarily chrominance edges, some luminance
+            float edge = chromaWeight * chromaDiff + (1.0f - chromaWeight) * lumDiff;
+            result.at(x, y) = static_cast<uint8_t>(std::min(255.0f, edge * 2.0f));
         }
     }
     
