@@ -18,9 +18,10 @@ class WasmProcessor {
         try {
             console.log('Starting WASM init...');
             
-            // Dynamic import of WASM module
+            // Dynamic import of WASM module with cache-busting
             console.log('Importing imgproc-wasm.js...');
-            const wasmModule = await import('./imgproc-wasm.js');
+            const version = 'v=' + Date.now();
+            const wasmModule = await import('./imgproc-wasm.js?' + version);
             console.log('WASM module imported:', wasmModule);
             
             const ModuleFactory = wasmModule.default;
@@ -175,17 +176,29 @@ class WasmProcessor {
             // Call WASM function - adaptive threshold (OpenCV-style)
             const startTime = performance.now();
             
-            console.log('Calling x9 with params:', {width, height, windowSize, c, method, outputMin, outputMax});
+            // FORCE params to be exact numbers
+            const ws = Number(windowSize);
+            const cVal = Number(c);
+            const meth = Number(method);
+            const minVal = Number(outputMin);
+            const maxVal = Number(outputMax);
+            
+            console.log('Calling x9 with EXACT params:', {
+                width, height, 
+                windowSize: ws, c: cVal, method: meth,
+                outputMin: minVal, outputMax: maxVal,
+                outputMinType: typeof minVal, outputMaxType: typeof maxVal
+            });
             
             const outputPtr = this.processFn(
                 inputPtr,
                 width,
                 height,
-                windowSize,
-                c,
-                method,
-                outputMin,
-                outputMax
+                ws,
+                cVal,
+                meth,
+                minVal,
+                maxVal
             );
 
             const processTime = performance.now() - startTime;
