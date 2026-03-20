@@ -1,0 +1,29 @@
+#!/bin/bash
+# Pre-push hook: Build WASM before pushing to ensure compiled files are up to date
+
+echo "🔧 Pre-push hook: Building WASM..."
+
+# Get the git root directory
+PROJECT_DIR=$(git rev-parse --show-toplevel)
+
+cd "$PROJECT_DIR"
+
+# Run the build script
+if ./build.sh; then
+    echo "✅ Build successful"
+    
+    # Check if there are new changes to commit
+    if ! git diff --quiet HEAD -- dist/ 2>/dev/null; then
+        echo "⚠️  New WASM build detected but not committed"
+        echo "   Run: git add dist/ && git commit --amend --no-edit"
+        echo "   Or:  git add dist/ && git commit -m 'update compiled wasm'"
+        echo ""
+        echo "   Push aborted. Commit the new build first."
+        exit 1
+    fi
+    
+    exit 0
+else
+    echo "❌ Build failed - push aborted"
+    exit 1
+fi
