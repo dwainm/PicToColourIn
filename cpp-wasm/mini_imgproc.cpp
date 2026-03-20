@@ -443,13 +443,13 @@ Image processToColoringPage(
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
     
     // Step 2.5: Color-aware edges (detects hue/saturation changes)
-    // Blend with grayscale DoG: 90% luminance, 10% color edges (very subtle)
+    // Blend with grayscale DoG: 95% luminance, 5% color edges (very subtle)
     Image colorEdges = colorEdgeMagnitude(rgbaIn, width, height, 0.3f);
     // Blur color edges to reduce noise
     colorEdges = gaussianBlur(colorEdges, 2.0f);
     
     for (int i = 0; i < width * height; ++i) {
-        float blended = 0.9f * dog.data[i] + 0.1f * colorEdges.data[i] * 0.5f;
+        float blended = 0.95f * dog.data[i] + 0.05f * colorEdges.data[i] * 0.5f;
         dog.data[i] = static_cast<uint8_t>(std::min(255.0f, blended * edgeIntensity));
     }
     
