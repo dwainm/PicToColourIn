@@ -23,23 +23,25 @@ export class AIColoringEvaluator {
     const base64Image = imageBuffer.toString('base64');
 
     const criteriaPrompts = {
-      standard: `Evaluate this photo-to-coloring-page conversion. This is ALGORITHMICALLY PROCESSED from a photo, not hand-drawn vector art. Score fairly for what automated edge detection can achieve. Score 1-10:
+      standard: `Evaluate this photo-to-coloring-page conversion. Score 1-10, but BE GENEROUS - if a child could color it, give at least 6/10. Algorithmic processing is OK, perfection is not required.
 
-1. LINE_CLARITY: Are the main outlines visible and continuous enough to color? (allow some algorithmic artifacts)
-2. DETAIL_BALANCE: Are key features recognizable with appropriate detail level for coloring?
-3. RECOGNIZABILITY: Can you identify the subject clearly despite processing artifacts?
-4. COLORABILITY: Are there enclosed regions suitable for filling with color? (some gaps OK)
-5. PRINT_QUALITY: Would a child enjoy coloring this, despite not being perfect vector art?
+1. USABLE_LINES (6+ if lines exist): Are there visible outlines to color between? Gaps OK, sketchy OK.
+2. RECOGNIZABLE (6+ if subject clear): Can you tell what it is? Don't penalize artistic style.
+3. COLORABLE_REGIONS (6+ if regions exist): Are there enclosed-ish areas to fill? Some leaks OK.
+4. NOT_BLANK (0 if pure white/black): Does it have visible content?
+5. PRINT_USABLE (6+ if printable): Would a kid have fun with crayons?
 
-Respond ONLY with valid JSON:
+Scoring: 8-10 = great coloring page, 6-7 = usable with flaws, 4-5 = poor but salvageable, 0-3 = broken/unusable
+
+Respond ONLY as JSON:
 {
-  "LINE_CLARITY": {"score": 0, "reason": "brief note on main outlines"},
-  "DETAIL_BALANCE": {"score": 0, "reason": "brief note on feature recognition"},
-  "RECOGNIZABILITY": {"score": 0, "reason": "brief note on subject clarity"},
-  "COLORABILITY": {"score": 0, "reason": "brief note on fillable regions"},
-  "PRINT_QUALITY": {"score": 0, "reason": "brief note on usability"},
-  "overall": 0,
-  "suggestions": ["suggestion 1", "suggestion 2"]
+  "USABLE_LINES": {"score": 6, "reason": "has visible outlines"},
+  "RECOGNIZABLE": {"score": 6, "reason": "subject is clear"},
+  "COLORABLE_REGIONS": {"score": 6, "reason": "regions exist"},
+  "NOT_BLANK": {"score": 6, "reason": "has content"},
+  "PRINT_USABLE": {"score": 6, "reason": "kid could color it"},
+  "overall": 6,
+  "suggestions": ["lower threshold if too faint", "increase blur if too noisy"]
 }`,
 
       strict: `As a professional coloring book artist, critique this page harshly. Score 1-10:
