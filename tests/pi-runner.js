@@ -16,13 +16,13 @@ const TEST_IMAGE = process.env.TEST_IMAGE || join(__dirname, 'fixtures', 'sample
 const OUTPUT_DIR = join(__dirname, 'outputs');
 const PORT = 8888;
 
-// Parameter variants - soft/blurred approach works better (5/10 achieved)
+// Parameter variants - pushing for 6/10 from 5/10 baseline
 const VARIANTS = [
-  { blurRadius: 2.5, edgeIntensity: 1.2, threshold: 0.12, sigmaRatio: 2.5, label: 'soft-a' },
-  { blurRadius: 3.0, edgeIntensity: 1.3, threshold: 0.15, sigmaRatio: 3.0, label: 'soft-b' },
-  { blurRadius: 3.5, edgeIntensity: 1.4, threshold: 0.18, sigmaRatio: 3.5, label: 'soft-c' },
-  { blurRadius: 4.0, edgeIntensity: 1.5, threshold: 0.20, sigmaRatio: 4.0, label: 'soft-d' },
-  { blurRadius: 2.0, edgeIntensity: 1.1, threshold: 0.10, sigmaRatio: 2.0, label: 'soft-e' },
+  { blurRadius: 3.2, edgeIntensity: 1.35, threshold: 0.16, sigmaRatio: 3.2, label: 'tuned-a' },
+  { blurRadius: 3.5, edgeIntensity: 1.4, threshold: 0.17, sigmaRatio: 3.5, label: 'tuned-b' },
+  { blurRadius: 3.8, edgeIntensity: 1.45, threshold: 0.19, sigmaRatio: 3.8, label: 'tuned-c' },
+  { blurRadius: 3.3, edgeIntensity: 1.38, threshold: 0.165, sigmaRatio: 3.3, label: 'tuned-d' },
+  { blurRadius: 3.6, edgeIntensity: 1.42, threshold: 0.175, sigmaRatio: 3.6, label: 'tuned-e' },
 ];
 
 async function startServer() {
