@@ -292,27 +292,38 @@ Image nonMaxSuppress(const Image& src) {
     return result;
 }
 
-// Adaptive thresholding - threshold based on local neighborhood
+// Adaptive thresholding - Gaussian weighted mean like OpenCV
 Image adaptiveThreshold(const Image& src, int windowSize, float c) {
     int halfWindow = windowSize / 2;
     Image result(src.width, src.height);
     
+    // Pre-compute Gaussian weights
+    float sigma = windowSize / 2.0f;
+    std::vector<float> weights(windowSize);
+    float weightSum = 0;
+    for (int i = 0; i < windowSize; ++i) {
+        float x = i - halfWindow;
+        weights[i] = std::exp(-(x * x) / (2 * sigma * sigma));
+        weightSum += weights[i];
+    }
+    
     for (int y = 0; y < src.height; ++y) {
         for (int x = 0; x < src.width; ++x) {
-            // Calculate local mean
+            // Gaussian-weighted local mean
             float sum = 0;
-            int count = 0;
+            float totalWeight = 0;
             
             for (int dy = -halfWindow; dy <= halfWindow; ++dy) {
                 for (int dx = -halfWindow; dx <= halfWindow; ++dx) {
                     int nx = std::max(0, std::min(x + dx, src.width - 1));
                     int ny = std::max(0, std::min(y + dy, src.height - 1));
-                    sum += src.at(nx, ny);
-                    count++;
+                    float w = weights[dy + halfWindow] * weights[dx + halfWindow];
+                    sum += src.at(nx, ny) * w;
+                    totalWeight += w;
                 }
             }
             
-            float localMean = sum / count;
+            float localMean = sum / totalWeight;
             float threshold = localMean - c;
             
             uint8_t val = src.at(x, y);
@@ -480,7 +491,7 @@ Image processToColoringPage(
 }
 
 // NEW: Simplified adaptive threshold - just like OpenCV
-// Creates boundaries between light/dark regions
+// Outputs regions (like THRESH_BINARY) - white objects on black background
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn,
     int width,
@@ -493,32 +504,20 @@ Image processToColoringPageAdaptive(
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
     
-    // Step 2: Adaptive threshold - pure and simple
+    // Step 2: Adaptive threshold - Gaussian weighted like OpenCV
     Image thresh = adaptiveThreshold(gray, windowSize, c);
     
-    // Step 3: Convert region boundaries to black lines on white background
+    // Step 3: Output like OpenCV - regions ready to color
+    // (Thresh is 255=white/foreground, 0=black/background)
     Image result(width, height);
     float minOut = outputMin * 255.0f;
     float maxOut = outputMax * 255.0f;
     float outRange = maxOut - minOut;
     
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            uint8_t center = thresh.at(x, y);
-            
-            // Check if at boundary between black/white regions
-            uint8_t n = (y > 0) ? thresh.at(x, y-1) : center;
-            uint8_t s = (y < height-1) ? thresh.at(x, y+1) : center;
-            uint8_t e = (x < width-1) ? thresh.at(x+1, y) : center;
-            uint8_t w = (x > 0) ? thresh.at(x-1, y) : center;
-            
-            // Boundary = edge = black line
-            bool isEdge = (center != n) || (center != s) || (center != e) || (center != w);
-            
-            float val = isEdge ? 0.0f : 255.0f;  // Black edge, white fill
-            float scaled = minOut + (val / 255.0f) * outRange;
-            result.at(x, y) = static_cast<uint8_t>(std::min(255.0f, std::max(0.0f, scaled)));
-        }
+    for (int i = 0; i < width * height; ++i) {
+        // Scale to output range
+        float scaled = minOut + (thresh.data[i] / 255.0f) * outRange;
+        result.data[i] = static_cast<uint8_t>(std::min(255.0f, std::max(0.0f, scaled)));
     }
     
     return result;
