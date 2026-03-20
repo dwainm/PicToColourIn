@@ -442,10 +442,16 @@ Image processToColoringPage(
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
     
-    // Debug: return raw DoG if requested
-    if (debugDogOut) {
-        *debugDogOut = dog;
-    }
+    // Step 2.5: Light smoothing to reduce waviness
+    dog = gaussianBlur(dog, 0.8f);
+    
+    // Debug: return raw DoG if requested (disabled to avoid dark debug images)
+    // if (debugDogOut) {
+    //     *debugDogOut = dog;
+    // }
+    
+    // Suppress debug output
+    (void)debugDogOut;
     
     // Step 3: Morphological closing (connect broken lines)
     if (closeRadius > 0) {

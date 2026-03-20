@@ -87,26 +87,16 @@ int main(int argc, char* argv[]) {
               << "blur=" << blurSigma << ", intensity=" << edgeIntensity 
               << ", sigmaRatio=" << sigmaRatio << ", bilateral=" << bilateralSpatial << "/" << bilateralIntensity << "\n";
     
-    // Debug: also output raw DoG
-    imgproc::Image debugDog(1, 1);  // Will be overwritten
-    
-    // Process with bilateral parameters
+    // Process - skip debug output to avoid dark images
     imgproc::Image result = imgproc::processToColoringPage(
         rgba.data(), width, height,
         blurSigma, edgeIntensity, sigmaRatio,
         closeRadius, 0.0f, 1.0f,  // full black/white range
-        &debugDog,  // Get debug output
+        nullptr,  // No debug output
         bilateralSpatial, bilateralIntensity
     );
     
-    // Write debug DoG output (before inversion)
-    std::string dogPath = std::string(outputPath);
-    dogPath = dogPath.substr(0, dogPath.find_last_of('.')) + "-dog.ppm";
-    if (writePPM(dogPath.c_str(), debugDog.data.data(), width, height)) {
-        std::cerr << "Debug DoG: " << dogPath << "\n";
-    }
-    
-    // Write final output
+    // Write final output (no debug DoG - keeps output clean)
     if (!writePPM(outputPath, result.data.data(), width, height)) {
         std::cerr << "Failed to write: " << outputPath << "\n";
         return 1;
