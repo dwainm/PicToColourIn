@@ -442,8 +442,8 @@ Image processToColoringPage(
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
     
-    // Step 2.5: Light smoothing to reduce waviness
-    dog = gaussianBlur(dog, 0.8f);
+    // Step 2.5: Light smoothing to reduce waviness (0.8 -> 1.0 for clearer effect)
+    dog = gaussianBlur(dog, 1.0f);
     
     // Debug: return raw DoG if requested (disabled to avoid dark debug images)
     // if (debugDogOut) {

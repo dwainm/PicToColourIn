@@ -47,12 +47,16 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - pure DoG back to 7/10 baseline
+// Parameter variants - test smoothing effect on waviness
 const VARIANTS = [
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7-5.5' },
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7-5.8' },
-  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7.2-5.5' },
-  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7.5-5.5' },
+  // Varying blur radius with smoothing
+  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7.5-5.5' },
+  { blurRadius: 8, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-8-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7-5.5' },
+  
+  // Higher intensity to compensate for smoothing
+  { blurRadius: 7.5, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7.5-5.8' },
+  { blurRadius: 8, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-8-5.8' },
 ];
 
 async function compileNative() {
