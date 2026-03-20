@@ -225,6 +225,20 @@ class ColoringApp {
             const outCtx = this.outputCanvas.getContext('2d', { alpha: false });
             console.log('Output canvas size before put:', this.outputCanvas.width, 'x', this.outputCanvas.height);
             outCtx.putImageData(result, 0, 0);
+            
+            // DEBUG: Verify canvas pixels are pure black/white
+            const sampleData = outCtx.getImageData(0, 0, 100, 100).data;
+            let hasGray = false;
+            for (let i = 0; i < sampleData.length; i += 4) {
+                const r = sampleData[i], g = sampleData[i+1], b = sampleData[i+2];
+                if ((r !== 0 && r !== 255) || (g !== 0 && g !== 255) || (b !== 0 && b !== 255)) {
+                    hasGray = true;
+                    console.log('GRAY PIXEL at', i, ':', r, g, b);
+                    if (i > 20) break;
+                }
+            }
+            console.log('Canvas has gray pixels:', hasGray);
+            
             console.log('Result displayed');
             
             this.hideLoadingOverPhoto();
