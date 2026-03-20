@@ -47,14 +47,13 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test speckle removal (clean-7.2-5.5 params)
+// Parameter variants - simple DoG with post-smoothing for less waviness
 const VARIANTS = [
-  // With speckle removal
-  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7.2-5.5' },
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7-5.5' },
-  { blurRadius: 7.2, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7.2-5.8' },
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7-5.8' },
-  { blurRadius: 7.5, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'speckle-7.5-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7-5.8' },
+  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7.2-5.5' },
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-7-6' },
+  { blurRadius: 6.8, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'smooth-6.8-5.5' },
 ];
 
 async function compileNative() {

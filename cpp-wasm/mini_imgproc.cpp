@@ -442,16 +442,8 @@ Image processToColoringPage(
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
     
-    // Step 2.5: Color-aware edges (detects hue/saturation changes)
-    // Blend with grayscale DoG: 95% luminance, 5% color edges (very subtle)
-    Image colorEdges = colorEdgeMagnitude(rgbaIn, width, height, 0.3f);
-    // Blur color edges to reduce noise
-    colorEdges = gaussianBlur(colorEdges, 2.0f);
-    
-    for (int i = 0; i < width * height; ++i) {
-        float blended = 0.95f * dog.data[i] + 0.05f * colorEdges.data[i] * 0.5f;
-        dog.data[i] = static_cast<uint8_t>(std::min(255.0f, blended * edgeIntensity));
-    }
+    // Step 2.5: Post-DoG smoothing to reduce waviness
+    dog = gaussianBlur(dog, 1.0f);  // Very light smoothing
     
     // Debug: return raw DoG if requested
     if (debugDogOut) {
@@ -462,10 +454,6 @@ Image processToColoringPage(
     if (closeRadius > 0) {
         dog = morphologicalClose(dog, closeRadius);
     }
-    
-    // Step 3.5: Remove small speckles/isolated edges (noise reduction)
-    // minSize=10 removes tiny texture speckles while keeping real edges
-    dog = removeSmallComponents(dog, 10);
     
     // Step 4: Invert and scale to output range
     // DoG gives us edges as bright values - invert so edges are dark
