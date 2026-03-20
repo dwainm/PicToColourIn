@@ -259,8 +259,8 @@ Image processToColoringPage(
     float outputMin,
     float outputMax,
     Image* debugDogOut,  // Optional: output raw DoG for debugging
-    float bilateralSpatial = 2.0f,   // Spatial sigma for bilateral filter (0 to disable)
-    float bilateralIntensity = 30.0f  // Intensity sigma for bilateral filter
+    float bilateralSpatial,   // Spatial sigma for bilateral filter (0 to disable)
+    float bilateralIntensity  // Intensity sigma for bilateral filter
 ) {
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
