@@ -74,9 +74,7 @@ async function startServer() {
   });
 }
 
-async function renderVariant(browser, params, testImagePath) {
-  const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
-  
+async function renderVariantWithPage(page, params, testImagePath) {
   // Capture console errors (but ignore favicon 404s)
   const errors = [];
   page.on('console', msg => {
@@ -136,7 +134,6 @@ async function renderVariant(browser, params, testImagePath) {
     const outputPath = join(OUTPUT_DIR, `variant-${params.label}.png`);
     await outputCanvas.screenshot({ path: outputPath });
     
-    await page.close();
     return { sourcePath, outputPath };
     
   } catch (err) {
@@ -147,7 +144,6 @@ async function renderVariant(browser, params, testImagePath) {
     if (errors.length > 0) {
       console.log(`   JS errors: ${errors.slice(0, 3).join(', ')}`);
     }
-    await page.close();
     throw err;
   }
 }
@@ -217,6 +213,9 @@ async function main() {
     status[params.label] = 'running';
     printStatus();
     
+    // Create page for this variant (sequential to avoid Playwright errors)
+    const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
+    
     let attempts = 0;
     const maxAttempts = 3;
     
@@ -224,16 +223,18 @@ async function main() {
       attempts++;
       
       try {
-        const { sourcePath, outputPath } = await renderVariant(browser, params, TEST_IMAGE);
+        const { sourcePath, outputPath } = await renderVariantWithPage(page, params, TEST_IMAGE);
         
         if (process.env.SKIP_AI) {
           status[params.label] = 'done: ✓ rendered (skipped AI)';
           printStatus();
+          await page.close();
           return { params, sourcePath, outputPath, evaluation: { overall: 0 } };
         } else {
           const evalResult = await evaluator.evaluate(outputPath, 'standard', TEST_IMAGE);
           status[params.label] = `done: ✓ ${evalResult.overall}/10`;
           printStatus();
+          await page.close();
           return { params, sourcePath, outputPath, evaluation: evalResult };
         }
         
@@ -243,6 +244,7 @@ async function main() {
         } else {
           status[params.label] = `done: ✗ ${err.message.slice(0, 30)}`;
           printStatus();
+          await page.close();
           return { params, path: null, evaluation: { overall: 0 }, error: err.message };
         }
       }
