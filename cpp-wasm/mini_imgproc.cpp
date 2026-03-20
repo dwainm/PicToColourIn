@@ -14,7 +14,7 @@ Image colorEdgeLab(const uint8_t* rgba, int width, int height, float chromaWeigh
 Image adaptiveThreshold(const Image& src, int blockSize, double delta, int method);
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn, int width, int height,
-    int windowSize, float c, float outputMin, float outputMax
+    int windowSize, float c, int method, float outputMin, float outputMax
 );
 
 Image rgbToGray(const uint8_t* rgba, int width, int height) {
@@ -560,15 +560,15 @@ Image processToColoringPageAdaptive(
     int height,
     int windowSize,      // Neighborhood size (e.g., 15 for 15x15 window)
     float c,             // Constant subtracted from mean (higher = more edges)
+    int method,          // 0 = MEAN_C (box), 1 = GAUSSIAN_C (Gaussian blur)
     float outputMin,     // 0.0 for white
     float outputMax      // 1.0 for black
 ) {
     // Step 1: Convert to grayscale
     Image gray = rgbToGray(rgbaIn, width, height);
     
-    // Step 2: Adaptive threshold - Gaussian weighted like OpenCV
-    // method=1 for GAUSSIAN_C (like OpenCV's ADAPTIVE_THRESH_GAUSSIAN_C)
-    Image thresh = adaptiveThreshold(gray, windowSize, c, 1);
+    // Step 2: Adaptive threshold - exact OpenCV algorithm
+    Image thresh = adaptiveThreshold(gray, windowSize, c, method);
     
     // Step 3: Output like OpenCV - regions ready to color
     // (Thresh is 255=white/foreground, 0=black/background)

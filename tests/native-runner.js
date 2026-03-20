@@ -47,15 +47,17 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - pure adaptive threshold (simplified)
+// Parameter variants - test both GAUSSIAN and MEAN methods
 const VARIANTS = [
-  // Just windowSize and c - pure adaptive like OpenCV
-  { type: 'adaptive', windowSize: 15, c: 5, label: 'adapt-15-5' },
-  { type: 'adaptive', windowSize: 21, c: 7, label: 'adapt-21-7' },
-  { type: 'adaptive', windowSize: 25, c: 7, label: 'adapt-25-7' },
-  { type: 'adaptive', windowSize: 21, c: 5, label: 'adapt-21-5' },
-  { type: 'adaptive', windowSize: 25, c: 5, label: 'adapt-25-5' },
-  { type: 'adaptive', windowSize: 31, c: 10, label: 'adapt-31-10' },
+  // GAUSSIAN_C (method=1)
+  { type: 'adaptive', windowSize: 15, c: 6, method: 1, label: 'adapt-15-6-gauss' },
+  { type: 'adaptive', windowSize: 15, c: 5, method: 1, label: 'adapt-15-5-gauss' },
+  
+  // MEAN_C (method=0) - faster, different look
+  { type: 'adaptive', windowSize: 15, c: 6, method: 0, label: 'adapt-15-6-mean' },
+  { type: 'adaptive', windowSize: 15, c: 5, method: 0, label: 'adapt-15-5-mean' },
+  { type: 'adaptive', windowSize: 21, c: 7, method: 0, label: 'adapt-21-7-mean' },
+  { type: 'adaptive', windowSize: 21, c: 5, method: 0, label: 'adapt-21-5-mean' },
 ];
 
 async function compileNative() {
@@ -89,13 +91,14 @@ async function runNativeProcess(inputPath, outputPath, params) {
     let args;
     
     if (params.type === 'adaptive') {
-      // Simplified adaptive - just windowSize and c
+      // Adaptive threshold - now with method parameter
       args = [
         'adaptive',
         inputPath,
         outputPath,
         params.windowSize.toString(),
-        params.c.toString()
+        params.c.toString(),
+        (params.method || 1).toString()  // 0 = MEAN_C, 1 = GAUSSIAN_C (default)
       ];
     } else {
       // DoG mode

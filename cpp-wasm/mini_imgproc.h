@@ -105,6 +105,7 @@ Image processToColoringPageAdaptive(
     int height,
     int windowSize,      // Neighborhood size (e.g., 15 for 15x15 window)
     float c,             // Constant subtracted from mean (higher = more edges)
+    int method,          // 0 = MEAN_C (box filter), 1 = GAUSSIAN_C (Gaussian blur)
     float outputMin,     // 0.0 for white
     float outputMax      // 1.0 for black
 );

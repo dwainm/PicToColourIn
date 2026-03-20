@@ -113,14 +113,15 @@ int main(int argc, char* argv[]) {
         std::cerr << "Wrote: " << outputPath << "\n";
         
     } else if (strcmp(mode, "adaptive") == 0) {
-        if (argc < 6) {
-            std::cerr << "adaptive mode needs: input.ppm output.ppm windowSize c\n";
+        if (argc < 7) {
+            std::cerr << "adaptive mode needs: input.ppm output.ppm windowSize c method\n";
             return 1;
         }
         const char* inputPath = argv[2];
         const char* outputPath = argv[3];
         int windowSize = std::stoi(argv[4]);
         float c = std::stof(argv[5]);
+        int method = std::stoi(argv[6]);  // 0 = MEAN_C, 1 = GAUSSIAN_C
         
         // Read input
         std::vector<uint8_t> rgba;
@@ -130,13 +131,14 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         
-        std::cerr << "[Adaptive] Processing " << width << "x" << height 
+        const char* methodName = (method == 0) ? "MEAN" : "GAUSSIAN";
+        std::cerr << "[Adaptive " << methodName << "] Processing " << width << "x" << height 
                   << " window=" << windowSize << " c=" << c << "\n";
         
         // Process with adaptive threshold
         imgproc::Image result = imgproc::processToColoringPageAdaptive(
             rgba.data(), width, height,
-            windowSize, c, 0.0f, 1.0f
+            windowSize, c, method, 0.0f, 1.0f
         );
         
         // Write output
