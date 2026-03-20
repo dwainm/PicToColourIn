@@ -18,63 +18,59 @@ export class AIColoringEvaluator {
     this.model = 'accounts/fireworks/routers/kimi-k2p5-turbo'; // Kimi 2.5 Turbo on Fireworks
   }
 
-  async evaluate(imagePath, criteria = 'standard') {
-    const imageBuffer = await fs.readFile(imagePath);
-    const base64Image = imageBuffer.toString('base64');
+  /**
+   * Evaluate a coloring page image
+   * @param {string} processedPath - Path to processed coloring page
+   * @param {string} criteria - Evaluation criteria
+   * @param {string|null} originalPath - Optional path to original photo for comparison
+   */
+  async evaluate(processedPath, criteria = 'standard', originalPath = null) {
+    const processedBuffer = await fs.readFile(processedPath);
+    const processedBase64 = processedBuffer.toString('base64');
+    
+    let originalBase64 = null;
+    if (originalPath) {
+      try {
+        const originalBuffer = await fs.readFile(originalPath);
+        originalBase64 = originalBuffer.toString('base64');
+      } catch (err) {
+        console.warn('Could not load original image:', err.message);
+      }
+    }
 
     const criteriaPrompts = {
-      standard: `Rate this coloring page 1-10. CRITICAL: Respond with ONLY a number, then brief reason. Examples: "7 - good outlines, usable" or "4 - faint lines, hard to color". Score 6+ if a kid could color it (perfection not required).`,
+      standard: originalBase64 
+        ? `I have TWO images: 1) Original photo 2) Coloring page version. Rate the coloring page 1-10 for how well it captures the subject with clean, colorable outlines. CRITICAL: Respond ONLY with a number, then brief reason comparing to original. Examples: "7 - captures dog well, good outlines" or "4 - lost facial details, faint lines".`
+        : `Rate this coloring page 1-10. CRITICAL: Respond with ONLY a number, then brief reason. Examples: "7 - good outlines, usable" or "4 - faint lines, hard to color".`,
 
-      strict: `Rate harshly 1-10. ONLY number + brief reason. Example: "5 - broken lines, noisy". Respond in 10 words max.`,
-
-      strict: `As a professional coloring book artist, critique this page harshly. Score 1-10:
-
-1. LINE_WEIGHT: Are lines consistent thickness appropriate for crayons/markers?
-2. COMPOSITION: Is the subject centered and well-framed?
-3. BACKGROUND: Is background clean (white/transparent) or appropriately handled?
-4. COMPLEXITY: Is this appropriate for the target age (assume 6-10 years)?
-5. ARTIFACTS: Any stray marks, noise, or processing errors?
-
-IMPORTANT: Respond ONLY with valid JSON. No markdown, no explanations outside JSON, no code blocks.
-
-{
-  "LINE_WEIGHT": {"score": 0, "reason": ""},
-  "COMPOSITION": {"score": 0, "reason": ""},
-  "BACKGROUND": {"score": 0, "reason": ""},
-  "COMPLEXITY": {"score": 0, "reason": ""},
-  "ARTIFACTS": {"score": 0, "reason": ""},
-  "overall": 0,
-  "rejects": false,
-  "rejection_reason": "if rejects"
-}`
+      strict: originalBase64
+        ? `Compare original photo to coloring page. Rate harshly 1-10. ONLY number + brief reason. Example: "5 - lost detail, broken lines". Did it preserve key features? 10 words max.`
+        : `Rate harshly 1-10. ONLY number + brief reason. Example: "5 - broken lines, noisy". Respond in 10 words max.`,
     };
 
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: this.model,
-        max_tokens: 1024,
-        temperature: 0.2, // Lower for consistent JSON output
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/png;base64,${base64Image}`
-              }
-            },
-            {
-              type: 'text',
-              text: criteriaPrompts[criteria] || criteriaPrompts.standard
-            }
-          ]
-        }]
-      })
+    const messages = [{
+      role: 'user',
+      content: []
+    }];
+    
+    // Add original if available
+    if (originalBase64) {
+      messages[0].content.push({
+        type: 'image_url',
+        image_url: { url: `data:image/jpeg;base64,${originalBase64}` }
+      });
+    }
+    
+    // Add processed image
+    messages[0].content.push({
+      type: 'image_url',
+      image_url: { url: `data:image/png;base64,${processedBase64}` }
+    });
+    
+    // Add text prompt
+    messages[0].content.push({
+      type: 'text',
+      text: criteriaPrompts[criteria] || criteriaPrompts.standard
     });
 
     if (!response.ok) {

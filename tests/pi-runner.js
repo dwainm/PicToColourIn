@@ -199,7 +199,7 @@ async function main() {
           results.push({ params, path, evaluation: { overall: 0 } });
           success = true;
         } else {
-          const evalResult = await evaluator.evaluate(path, 'standard');
+          const evalResult = await evaluator.evaluate(path, 'standard', TEST_IMAGE);
           results.push({ params, path, evaluation: evalResult });
           console.log(`✓ ${evalResult.overall}/10`);
           success = true;

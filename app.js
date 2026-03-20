@@ -1,17 +1,15 @@
 /**
  * PicToColourIn - One-Click Photo to Coloring Page
- * Lazily loads C++ WASM on first use, shows loading state
+ * WASM loads immediately in background. Ready when user drops photo.
  */
 
 class ColoringApp {
     constructor() {
         this.sourceImage = null;
         this.processor = null;
-        this.wasmLoading = false;
-        this.wasmReady = false;
-        this.pendingImage = null;
+        this.wasmState = 'idle'; // 'idle' | 'loading' | 'ready' | 'error'
         
-        // Tuned parameters (from 19 iterations of testing)
+        // Tuned parameters (from 19 iterations)
         this.processingParams = {
             blurRadius: 3.6,
             edgeIntensity: 1.42,
@@ -24,11 +22,46 @@ class ColoringApp {
         this.init();
     }
 
-    init() {
+    async init() {
         this.cacheElements();
         this.bindEvents();
-        // Don't load WASM yet - wait for first image
-        console.log('App ready. Drop a photo to start.');
+        
+        // Start loading WASM immediately in background
+        this.loadWasmInBackground();
+    }
+
+    async loadWasmInBackground() {
+        if (this.wasmState !== 'idle') return;
+        
+        this.wasmState = 'loading';
+        console.log('Loading high-performance engine in background...');
+        
+        try {
+            const { WasmProcessor } = await import('./wasm-processor.js');
+            this.processor = new WasmProcessor();
+            await this.processor.init();
+            
+            if (!this.processor.fallbackMode) {
+                this.wasmState = 'ready';
+                console.log('✓ High-performance engine ready');
+            } else {
+                this.wasmState = 'ready';
+                console.log('✓ Standard engine ready (WebGL fallback)');
+            }
+        } catch (err) {
+            console.warn('WASM failed, trying WebGL:', err.message);
+            
+            try {
+                const { WebGLProcessor } = await import('./webgl-processor.js');
+                this.processor = new WebGLProcessor();
+                await this.processor.init();
+                this.wasmState = 'ready';
+                console.log('✓ WebGL engine ready');
+            } catch (webglErr) {
+                console.error('All processors failed:', webglErr);
+                this.wasmState = 'error';
+            }
+        }
     }
 
     cacheElements() {
@@ -82,35 +115,32 @@ class ColoringApp {
 
     async loadImage(file) {
         try {
-            // Show loading immediately
-            this.showEditorLoading();
-            
-            // Load image preview
+            // Load and display image immediately
             this.sourceImage = await this.createImageBitmap(file);
             this.displaySourceImage();
             
-            // Show editor with loading state
+            // Switch to editor
             this.uploadSection.style.display = 'none';
             this.editorSection.style.display = 'flex';
             
-            // Lazy load WASM if not already loading/ready
-            if (!this.processor && !this.wasmLoading) {
-                await this.initProcessor();
+            // Check WASM state
+            if (this.wasmState === 'loading') {
+                // Show loading over photo while waiting
+                this.showLoadingOverPhoto('Loading high-performance engine...');
+                await this.waitForWasmReady();
+                this.hideLoadingOverPhoto();
+            } else if (this.wasmState === 'error') {
+                this.showStatus('Processing not available in this browser', 'error');
+                return;
             }
             
-            // If still loading WASM, wait
-            if (this.wasmLoading) {
-                this.updateLoadingText('Loading high-performance engine...');
-                await this.waitForWasm();
-            }
-            
-            // Now process
+            // Now WASM is ready, process
             await this.process();
             
         } catch (err) {
             console.error('Error:', err);
-            this.showStatus('Something went wrong. Try another photo.', 'error');
-            this.hideLoading();
+            this.showStatus('Error loading image. Try another photo.', 'error');
+            this.hideLoadingOverPhoto();
         }
     }
 
@@ -133,48 +163,20 @@ class ColoringApp {
         
         this.outputCanvas.width = this.sourceImage.width;
         this.outputCanvas.height = this.sourceImage.height;
-    }
-
-    async initProcessor() {
-        this.wasmLoading = true;
-        this.updateLoadingText('Preparing processor...');
         
-        try {
-            // Try WASM first
-            const { WasmProcessor } = await import('./wasm-processor.js');
-            this.processor = new WasmProcessor();
-            await this.processor.init();
-            
-            if (!this.processor.fallbackMode) {
-                this.wasmReady = true;
-                console.log('✓ WASM ready');
-            } else {
-                console.log('Using WebGL fallback');
-            }
-        } catch (err) {
-            console.warn('WASM failed, using WebGL:', err.message);
-            
-            // Fallback to WebGL
-            try {
-                const { WebGLProcessor } = await import('./webgl-processor.js');
-                this.processor = new WebGLProcessor();
-                await this.processor.init();
-            } catch (webglErr) {
-                console.error('WebGL also failed:', webglErr);
-                throw new Error('Your browser does not support image processing');
-            }
-        } finally {
-            this.wasmLoading = false;
-        }
+        // Clear output canvas (show blank while loading/processing)
+        const outCtx = this.outputCanvas.getContext('2d');
+        outCtx.fillStyle = '#ffffff';
+        outCtx.fillRect(0, 0, this.outputCanvas.width, this.outputCanvas.height);
     }
 
-    waitForWasm() {
+    waitForWasmReady() {
         return new Promise((resolve) => {
             const check = () => {
-                if (!this.wasmLoading) {
+                if (this.wasmState === 'ready' || this.wasmState === 'error') {
                     resolve();
                 } else {
-                    setTimeout(check, 100);
+                    setTimeout(check, 50);
                 }
             };
             check();
@@ -182,12 +184,13 @@ class ColoringApp {
     }
 
     async process() {
-        if (!this.processor || !this.sourceImage) {
+        if (!this.processor || this.wasmState !== 'ready') {
             this.showStatus('Processor not ready', 'error');
             return;
         }
         
-        this.updateLoadingText('Creating coloring page...');
+        // Show loading while processing
+        this.showLoadingOverPhoto('Creating coloring page...');
         this.downloadBtn.disabled = true;
         
         try {
@@ -206,33 +209,29 @@ class ColoringApp {
             const outCtx = this.outputCanvas.getContext('2d');
             outCtx.putImageData(result, 0, 0);
             
-            this.hideLoading();
+            this.hideLoadingOverPhoto();
             
-            const mode = this.wasmReady ? 'High-performance' : 'Standard';
-            this.showStatus(`${mode} mode • Ready in ${(processTime/1000).toFixed(1)}s`, 'success');
+            const mode = this.processor.fallbackMode ? 'Standard' : 'High-performance';
+            this.showStatus(`${mode} • ${(processTime/1000).toFixed(1)}s`, 'success');
             this.downloadBtn.disabled = false;
             
         } catch (err) {
             console.error('Processing error:', err);
-            this.hideLoading();
+            this.hideLoadingOverPhoto();
             this.showStatus('Processing failed. Try a different photo.', 'error');
         }
     }
 
-    showEditorLoading() {
+    showLoadingOverPhoto(text) {
         if (this.loadingOverlay) {
             this.loadingOverlay.style.display = 'flex';
         }
-        this.updateLoadingText('Loading...');
-    }
-
-    updateLoadingText(text) {
         if (this.loadingText) {
             this.loadingText.textContent = text;
         }
     }
 
-    hideLoading() {
+    hideLoadingOverPhoto() {
         if (this.loadingOverlay) {
             this.loadingOverlay.style.display = 'none';
         }
@@ -282,7 +281,7 @@ class ColoringApp {
         this.sourceImage = null;
         this.fileInput.value = '';
         this.statusDiv.style.display = 'none';
-        this.hideLoading();
+        this.hideLoadingOverPhoto();
         this.downloadBtn.disabled = false;
     }
 }
