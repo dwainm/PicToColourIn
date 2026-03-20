@@ -9,7 +9,7 @@
 
 namespace imgproc {
 
-// Forward declarations
+// Forward declarations (in namespace)
 Image colorEdgeLab(const uint8_t* rgba, int width, int height, float chromaWeight);
 Image processToColoringPageAdaptive(
     const uint8_t* rgbaIn, int width, int height,
@@ -522,7 +522,6 @@ Image processToColoringPageAdaptive(
     }
     
     return result;
-}
 }
 
 // Color-aware edge detection - detects changes in hue/saturation, not just brightness
