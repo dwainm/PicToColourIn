@@ -90,17 +90,10 @@ class WasmProcessor {
                 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
             ]);
             
-            // NEW: Adaptive threshold function (OpenCV-style)
-            // NOTE: Requires WASM rebuild with updated bindings.cpp
-            try {
-                this.processImageAdaptiveFn = this.module.cwrap('processImageAdaptive', 'number', [
-                    'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
-                ]);
-                console.log('✓ Adaptive threshold function available');
-            } catch (err) {
-                console.warn('⚠ Adaptive threshold not in WASM, falling back to DoG method');
-                this.processImageAdaptiveFn = null;
-            }
+            // Adaptive threshold function (OpenCV-style) - PRODUCTION DEFAULT
+            this.processImageAdaptiveFn = this.module.cwrap('processImageAdaptive', 'number', [
+                'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'
+            ]);
             
             this.freeImageFn = this.module.cwrap('freeProcessedImage', null, ['number']);
             this.estimateTimeFn = this.module.cwrap('estimateProcessingTime', 'number', ['number', 'number']);
@@ -175,37 +168,19 @@ class WasmProcessor {
             // Copy input to WASM memory
             this.module.HEAPU8.set(rgbaData, inputPtr);
 
-            // Call WASM function - use adaptive if available, else fall back to DoG
+            // Call WASM function - adaptive threshold (OpenCV-style)
             const startTime = performance.now();
-            let outputPtr;
             
-            if (this.processImageAdaptiveFn) {
-                // Use new adaptive threshold (OpenCV-style)
-                outputPtr = this.processImageAdaptiveFn(
-                    inputPtr,
-                    width,
-                    height,
-                    windowSize,
-                    c,
-                    method,
-                    outputMin,
-                    outputMax
-                );
-            } else {
-                // FALLBACK: Use old DoG method with equivalent-ish params
-                console.warn('Using DoG fallback - rebuild WASM for adaptive threshold');
-                outputPtr = this.processImageFn(
-                    inputPtr,
-                    width,
-                    height,
-                    3.6,   // blurSigma
-                    1.42,  // edgeIntensity  
-                    3.6,   // sigmaRatio
-                    1,     // closeRadius
-                    outputMin,
-                    outputMax
-                );
-            }
+            const outputPtr = this.processImageAdaptiveFn(
+                inputPtr,
+                width,
+                height,
+                windowSize,
+                c,
+                method,
+                outputMin,
+                outputMax
+            );
 
             const processTime = performance.now() - startTime;
             console.log(`WASM processing: ${processTime.toFixed(1)}ms`);
