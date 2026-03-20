@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
               << "blur=" << blurSigma << ", intensity=" << edgeIntensity << ", sigmaRatio=" << sigmaRatio << "\n";
     
     // Debug: also output raw DoG
-    imgproc::Image debugDog;
+    imgproc::Image debugDog(1, 1);  // Will be overwritten
     
     // Process
     imgproc::Image result = imgproc::processToColoringPage(

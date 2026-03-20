@@ -67,8 +67,9 @@ Image processToColoringPage(
     float edgeIntensity,    // e.g., 1.42
     float sigmaRatio,       // e.g., 3.6
     int closeRadius,        // morphological closing radius, e.g., 1 or 2
-    float outputMin,        // minimum output value (0.2 to avoid pure black)
-    float outputMax         // maximum output value (0.8 for dark gray lines)
+    float outputMin,        // minimum output value (0.0 for pure white)
+    float outputMax,        // maximum output value (1.0 for pure black)
+    Image* debugDogOut = nullptr  // optional: output raw DoG for debugging
 );
 
 } // namespace imgproc
