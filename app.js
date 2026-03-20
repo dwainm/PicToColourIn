@@ -164,7 +164,7 @@ class ColoringApp {
         
         this.sourceCanvas.width = this.sourceImage.width;
         this.sourceCanvas.height = this.sourceImage.height;
-        const ctx = this.sourceCanvas.getContext('2d');
+        const ctx = this.sourceCanvas.getContext('2d', { alpha: false });
         ctx.drawImage(this.sourceImage, 0, 0);
         
         this.outputCanvas.width = this.sourceImage.width;
@@ -205,7 +205,7 @@ class ColoringApp {
         this.downloadBtn.disabled = true;
         
         try {
-            const ctx = this.sourceCanvas.getContext('2d');
+            const ctx = this.sourceCanvas.getContext('2d', { alpha: false });
             console.log('Source canvas size:', this.sourceCanvas.width, 'x', this.sourceCanvas.height);
             
             const imageData = ctx.getImageData(
@@ -222,7 +222,7 @@ class ColoringApp {
             const processTime = performance.now() - startTime;
             
             // Display result
-            const outCtx = this.outputCanvas.getContext('2d');
+            const outCtx = this.outputCanvas.getContext('2d', { alpha: false });
             console.log('Output canvas size before put:', this.outputCanvas.width, 'x', this.outputCanvas.height);
             outCtx.putImageData(result, 0, 0);
             console.log('Result displayed');
