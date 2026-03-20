@@ -1,29 +1,38 @@
 #!/bin/bash
 # Pre-push hook: Build WASM before pushing to ensure compiled files are up to date
+# REQUIRES: Emscripten must be installed locally to compile fresh WASM
 
 echo "🔧 Pre-push hook: Building WASM..."
 
 # Get the git root directory
 PROJECT_DIR=$(git rev-parse --show-toplevel)
-
 cd "$PROJECT_DIR"
+
+# Add common Emscripten locations to PATH
+export PATH="$HOME/emsdk:$HOME/emsdk/upstream/emscripten:$PATH"
+
+# Require Emscripten for build (no copying allowed)
+export REQUIRE_EMSCRIPTEN=1
 
 # Run the build script
 if ./build.sh; then
-    echo "✅ Build successful"
+    echo "✅ WASM build successful"
     
     # Check if there are new changes to commit
     if ! git diff --quiet HEAD -- dist/ 2>/dev/null; then
-        echo "⚠️  New WASM build detected but not committed"
-        echo "   Run: git add dist/ && git commit --amend --no-edit"
-        echo "   Or:  git add dist/ && git commit -m 'update compiled wasm'"
+        echo ""
+        echo "⚠️  New WASM build detected but not committed!"
+        echo "   Run one of these:"
+        echo "     git add dist/ && git commit --amend --no-edit"
+        echo "     git add dist/ && git commit -m 'update compiled wasm'"
         echo ""
         echo "   Push aborted. Commit the new build first."
         exit 1
     fi
     
+    echo "✅ All checks passed - pushing..."
     exit 0
 else
-    echo "❌ Build failed - push aborted"
+    echo "❌ WASM build failed - push aborted"
     exit 1
 fi

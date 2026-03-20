@@ -20,6 +20,11 @@ if command -v emcc &> /dev/null; then
     make
     cd "$SCRIPT_DIR"
     echo "✓ WASM build complete"
+elif [ "${REQUIRE_EMSCRIPTEN:-0}" = "1" ]; then
+    # Fail if Emscripten is required (e.g., from pre-push hook)
+    echo "❌ Emscripten (emcc) not found!"
+    echo "   Install: https://emscripten.org/docs/getting_started/downloads.html"
+    exit 1
 else
     echo "⚠ Emscripten not found, skipping WASM build"
     echo "  Install: https://emscripten.org/docs/getting_started/downloads.html"
