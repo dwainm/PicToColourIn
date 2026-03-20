@@ -260,7 +260,23 @@ class ColoringApp {
             const result = await this.processor.process(imageData, this.processingParams);
             console.log('Result ImageData size:', result.width, 'x', result.height, 'data length:', result.data.length);
             
+            // DEBUG: Check ImageData BEFORE putImageData
+            let wasmGray = false;
+            for (let i = 0; i < Math.min(100, result.data.length); i += 4) {
+                const r = result.data[i], g = result.data[i+1], b = result.data[i+2];
+                if ((r !== 0 && r !== 255) || (g !== 0 && g !== 255) || (b !== 0 && b !== 255)) {
+                    wasmGray = true;
+                    console.log('WASM GRAY at', i, ':', r, g, b);
+                    if (i > 20) break;
+                }
+            }
+            console.log('WASM ImageData has gray:', wasmGray);
+            
             const processTime = performance.now() - startTime;
+            
+            // DEBUG: Check canvas color space
+            const testCtx = this.outputCanvas.getContext('2d', { alpha: false });
+            console.log('Canvas color space:', testCtx.getContextAttributes()?.colorSpace || 'unknown');
             
             // Display result
             const outCtx = this.outputCanvas.getContext('2d', { alpha: false });
