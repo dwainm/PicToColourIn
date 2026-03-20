@@ -47,19 +47,9 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// FINAL VALIDATION - around the winner: window=21, c=5, GAUSSIAN method
+// FINAL TEST - only the winner: window=23, c=5, GAUSSIAN method
 const VARIANTS = [
-  // The winner
-  { type: 'adaptive', windowSize: 21, c: 5, method: 1, label: 'final-winner-21-5' },
-  
-  // Fine-tune around winner
-  { type: 'adaptive', windowSize: 21, c: 4, method: 1, label: 'final-21-4' },
-  { type: 'adaptive', windowSize: 21, c: 6, method: 1, label: 'final-21-6' },
-  { type: 'adaptive', windowSize: 19, c: 5, method: 1, label: 'final-19-5' },
-  { type: 'adaptive', windowSize: 23, c: 5, method: 1, label: 'final-23-5' },
-  
-  // Compare to MEAN method
-  { type: 'adaptive', windowSize: 21, c: 5, method: 0, label: 'final-21-5-mean' },
+  { type: 'adaptive', windowSize: 23, c: 5, method: 1, label: 'production-final' },
 ];
 
 async function compileNative() {
