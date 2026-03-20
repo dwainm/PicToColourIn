@@ -315,6 +315,23 @@ class WebGLProcessor {
             threshold,
             sigmaRatio 
         });
+        
+        // Read pixels from canvas and return as ImageData
+        const gl = this.gl;
+        const pixels = new Uint8ClampedArray(this.width * this.height * 4);
+        gl.readPixels(0, 0, this.width, this.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        
+        // Flip Y (WebGL has different coordinate system)
+        const flipped = new Uint8ClampedArray(this.width * this.height * 4);
+        for (let y = 0; y < this.height; y++) {
+            const srcRow = y * this.width * 4;
+            const dstRow = (this.height - 1 - y) * this.width * 4;
+            for (let x = 0; x < this.width * 4; x++) {
+                flipped[dstRow + x] = pixels[srcRow + x];
+            }
+        }
+        
+        return new ImageData(flipped, this.width, this.height);
     }
 
     ensureBlurTextures() {
