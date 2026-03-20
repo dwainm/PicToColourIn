@@ -27,7 +27,6 @@ mkdir -p dist
 echo "→ Copying files to dist/..."
 cp index.html dist/
 cp app.js dist/
-cp webgl-processor.js dist/
 cp processing-queue.js dist/
 cp styles.css dist/
 cp ads.txt dist/
