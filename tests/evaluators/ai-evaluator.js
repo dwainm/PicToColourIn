@@ -73,6 +73,21 @@ export class AIColoringEvaluator {
       text: criteriaPrompts[criteria] || criteriaPrompts.standard
     });
 
+    // Make API request
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: this.model,
+        messages: messages,
+        max_tokens: 100,
+        temperature: 0.3
+      })
+    });
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`Fireworks API error: ${response.status} ${error}`);
