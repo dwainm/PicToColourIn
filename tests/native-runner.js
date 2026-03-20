@@ -47,13 +47,15 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test range to find best
+// Parameter variants - fine-tune around 7/10 winner
 const VARIANTS = [
-  { blurRadius: 6, edgeIntensity: 4, sigmaRatio: 2, closeRadius: 0, label: 'mid-a' },
-  { blurRadius: 7, edgeIntensity: 5, sigmaRatio: 2, closeRadius: 0, label: 'mid-b' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'mid-c' },
-  { blurRadius: 9, edgeIntensity: 7, sigmaRatio: 1.5, closeRadius: 1, label: 'mid-d' },
-  { blurRadius: 10, edgeIntensity: 8, sigmaRatio: 1.5, closeRadius: 1, label: 'mid-e' },
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-a' },
+  { blurRadius: 7.5, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-b' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-c' },  // 7/10 winner
+  { blurRadius: 8, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-d' },
+  { blurRadius: 8.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, label: 'fine-e' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.2, closeRadius: 0, label: 'fine-f' },
+  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.8, closeRadius: 0, label: 'fine-g' },
 ];
 
 async function compileNative() {
