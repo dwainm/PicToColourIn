@@ -1,6 +1,7 @@
 /**
  * Mini Image Processing Library - Implementation
  * Optimized for WASM with minimal dependencies
+ * Auto-built on every push
  */
 
 #include "mini_imgproc.h"
