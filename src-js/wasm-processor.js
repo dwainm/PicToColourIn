@@ -61,10 +61,28 @@ class WasmProcessor {
                 });
             }
             
+            // Check what's actually available
+            console.log('Module keys:', Object.keys(this.module));
+            console.log('Has HEAP8:', !!this.module.HEAP8);
+            console.log('Has HEAPU8:', !!this.module.HEAPU8);
+            console.log('Has buffer:', !!this.module.buffer);
+            
+            // Try to find memory
+            let heap = this.module.HEAPU8 || this.module.HEAP8;
+            if (!heap && this.module.buffer) {
+                heap = new Uint8Array(this.module.buffer);
+            }
+            
             // Verify HEAP is available
-            if (!this.module.HEAPU8) {
+            if (!heap) {
+                console.error('No heap available, module contents:', this.module);
                 throw new Error('WASM HEAP not initialized');
             }
+            
+            // Store reference
+            this.module.HEAPU8 = heap;
+            
+            console.log('HEAP available, length:', heap.length);
             
             // Wrap C functions for easy calling
             console.log('Wrapping C functions...');
