@@ -73,6 +73,7 @@ class ColoringApp {
         this.newImageBtn = document.getElementById('newImageBtn');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.printBtn = document.getElementById('printBtn');
+        this.testBtn = document.getElementById('testBtn');
         this.statusDiv = document.getElementById('status');
     }
 
@@ -103,11 +104,8 @@ class ColoringApp {
         this.printBtn?.addEventListener('click', () => this.print());
         
         // DEBUG: Test canvas drawing - pure black/white
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 't' && e.ctrlKey) {
-                e.preventDefault();
-                this.testCanvasPureBW();
-            }
+        this.testBtn?.addEventListener('click', () => {
+            this.testCanvasPureBW();
         });
     }
     
