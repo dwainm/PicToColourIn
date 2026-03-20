@@ -169,11 +169,6 @@ class ColoringApp {
         
         this.outputCanvas.width = this.sourceImage.width;
         this.outputCanvas.height = this.sourceImage.height;
-        
-        // Clear output canvas (show blank while loading/processing)
-        const outCtx = this.outputCanvas.getContext('2d');
-        outCtx.fillStyle = '#ffffff';
-        outCtx.fillRect(0, 0, this.outputCanvas.width, this.outputCanvas.height);
     }
 
     waitForWasmReady() {
