@@ -448,16 +448,6 @@ Image processToColoringPage(
     // Step 2.5: Very light smoothing to reduce waviness without losing detail
     dog = gaussianBlur(dog, 0.5f);
     
-    // Step 2.6: CIELAB color-aware edge detection (detects color boundaries)
-    // Blend: 90% luminance DoG, 10% chrominance edges (catches green leaf vs blue wall)
-    Image colorEdges = colorEdgeLab(rgbaIn, width, height, 0.85f);  // 85% chrominance
-    colorEdges = gaussianBlur(colorEdges, 2.0f);  // Blur to reduce noise
-    
-    for (int i = 0; i < width * height; ++i) {
-        float blended = 0.90f * dog.data[i] + 0.10f * colorEdges.data[i] * 0.5f;
-        dog.data[i] = static_cast<uint8_t>(std::min(255.0f, blended));
-    }
-    
     // Debug: return raw DoG if requested (disabled to avoid dark debug images)
     (void)debugDogOut;
     

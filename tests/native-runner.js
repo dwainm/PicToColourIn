@@ -47,13 +47,12 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - test CIELAB color-aware edges
+// Parameter variants - pure DoG (best visual quality)
 const VARIANTS = [
-  // With CIELAB color edges
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'cielab-7-5.5' },
-  { blurRadius: 7.1, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'cielab-7.1-5.5' },
-  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'cielab-7-5.8' },
-  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'cielab-7.2-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7-5.5' },
+  { blurRadius: 7.1, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7.1-5.5' },
+  { blurRadius: 7.2, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7.2-5.5' },
+  { blurRadius: 7, edgeIntensity: 5.8, sigmaRatio: 1.5, closeRadius: 0, label: 'pure-7-5.8' },
 ];
 
 async function compileNative() {
