@@ -58,6 +58,12 @@ if [ -d "workers" ]; then
     echo "✓ Copied workers/"
 fi
 
+# Copy _headers for Cloudflare Pages (WASM MIME type)
+if [ -f "_headers" ]; then
+    cp _headers dist/
+    echo "✓ Copied _headers"
+fi
+
 echo ""
 echo "✓ Build complete. Ready for deployment."
 echo ""
