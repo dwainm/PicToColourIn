@@ -7,10 +7,10 @@ class ColoringApp {
         this.processor = null;
         this.sourceImage = null;
         this.processingParams = {
-            blurRadius: 2.0,
-            edgeIntensity: 0.8,
-            threshold: 0.25,
-            sigmaRatio: 2.0
+            blurRadius: 3.6,
+            edgeIntensity: 1.42,
+            threshold: 0.175,
+            sigmaRatio: 3.6
         };
         
         this.init();
@@ -262,12 +262,12 @@ class ColoringApp {
         this.edgeValue.textContent = '0.8';
         this.thresholdValue.textContent = '0.25';
         
-        // Reset params (DoG: Difference of Gaussians)
+        // Reset params (DoG: Difference of Gaussians) - best tuned params
         this.processingParams = {
-            blurRadius: 2.0,
-            edgeIntensity: 0.8,
-            threshold: 0.25,
-            sigmaRatio: 2.0
+            blurRadius: 3.6,
+            edgeIntensity: 1.42,
+            threshold: 0.175,
+            sigmaRatio: 3.6
         };
     }
 }
