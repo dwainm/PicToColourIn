@@ -28,7 +28,7 @@ async function fileExists(path) {
 // Helper: convert JPG to PPM using ffmpeg
 async function convertToPPM(inputPath, outputPath) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('ffmpeg', ['-i', inputPath, '-f', 'ppm', outputPath, '-y']);
+    const proc = spawn('ffmpeg', ['-i', inputPath, '-frames:v', '1', outputPath, '-y']);
     proc.on('close', (code) => {
       if (code === 0) resolve();
       else reject(new Error(`ffmpeg failed with code ${code}`));
@@ -39,7 +39,7 @@ async function convertToPPM(inputPath, outputPath) {
 // Helper: convert PPM to PNG using ffmpeg
 async function convertPPMtoPNG(inputPath, outputPath) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('ffmpeg', ['-i', inputPath, '-f', 'png', outputPath, '-y']);
+    const proc = spawn('ffmpeg', ['-i', inputPath, '-frames:v', '1', outputPath, '-y']);
     proc.on('close', (code) => {
       if (code === 0) resolve();
       else reject(new Error(`ffmpeg PNG conversion failed with code ${code}`));
