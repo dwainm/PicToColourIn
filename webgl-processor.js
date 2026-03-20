@@ -485,12 +485,9 @@ const DOG_FRAGMENT_SHADER = `
         float wide = grayscale(texture2D(u_blurTexture, v_texCoord));
         float edge = abs(narrow - wide) * u_edgeIntensity * 4.0;
         
-        // Output grayscale edge intensity (inverted: high edge = dark)
-        // No hard threshold - smooth gradient edges
-        float result = 1.0 - clamp(edge, 0.0, 1.0);
-        
-        // Boost contrast slightly to make edges more visible
-        result = pow(result, 0.7);
+        // Darker edges but never pure black (0.2 minimum)
+        // This gives defined lines without heavy fill
+        float result = 1.0 - clamp(edge * 1.5, 0.0, 0.8);
         
         gl_FragColor = vec4(vec3(result), 1.0);
     }
