@@ -198,6 +198,18 @@ class WasmProcessor {
                 outputSize
             );
             
+            // DEBUG: Check raw WASM buffer BEFORE creating ImageData
+            let rawHasGray = false;
+            for (let i = 0; i < Math.min(100, resultData.length); i += 4) {
+                const r = resultData[i], g = resultData[i+1], b = resultData[i+2];
+                if ((r !== 0 && r !== 255) || (g !== 0 && g !== 255) || (b !== 0 && b !== 255)) {
+                    rawHasGray = true;
+                    console.log('RAW WASM gray at', i, ':', r, g, b);
+                    if (i > 20) break;
+                }
+            }
+            console.log('Raw WASM buffer has gray:', rawHasGray);
+            
             // Create ImageData (make a copy since we'll free WASM memory)
             const result = new ImageData(
                 new Uint8ClampedArray(resultData),
