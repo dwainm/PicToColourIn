@@ -23,26 +23,9 @@ export class AIColoringEvaluator {
     const base64Image = imageBuffer.toString('base64');
 
     const criteriaPrompts = {
-      standard: `Evaluate this photo-to-coloring-page conversion. Score 1-10, but BE GENEROUS - if a child could color it, give at least 6/10. Algorithmic processing is OK, perfection is not required.
+      standard: `Rate this coloring page 1-10. CRITICAL: Respond with ONLY a number, then brief reason. Examples: "7 - good outlines, usable" or "4 - faint lines, hard to color". Score 6+ if a kid could color it (perfection not required).`,
 
-1. USABLE_LINES (6+ if lines exist): Are there visible outlines to color between? Gaps OK, sketchy OK.
-2. RECOGNIZABLE (6+ if subject clear): Can you tell what it is? Don't penalize artistic style.
-3. COLORABLE_REGIONS (6+ if regions exist): Are there enclosed-ish areas to fill? Some leaks OK.
-4. NOT_BLANK (0 if pure white/black): Does it have visible content?
-5. PRINT_USABLE (6+ if printable): Would a kid have fun with crayons?
-
-Scoring: 8-10 = great coloring page, 6-7 = usable with flaws, 4-5 = poor but salvageable, 0-3 = broken/unusable
-
-Respond ONLY as JSON:
-{
-  "USABLE_LINES": {"score": 6, "reason": "has visible outlines"},
-  "RECOGNIZABLE": {"score": 6, "reason": "subject is clear"},
-  "COLORABLE_REGIONS": {"score": 6, "reason": "regions exist"},
-  "NOT_BLANK": {"score": 6, "reason": "has content"},
-  "PRINT_USABLE": {"score": 6, "reason": "kid could color it"},
-  "overall": 6,
-  "suggestions": ["lower threshold if too faint", "increase blur if too noisy"]
-}`,
+      strict: `Rate harshly 1-10. ONLY number + brief reason. Example: "5 - broken lines, noisy". Respond in 10 words max.`,
 
       strict: `As a professional coloring book artist, critique this page harshly. Score 1-10:
 
@@ -102,15 +85,21 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown, no explanations outside JS
     const data = await response.json();
     const text = data.choices[0].message.content;
 
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    // Extract first number from response (simple format: "7 - reason")
+    const numberMatch = text.match(/(\d+)/);
     
-    if (!jsonMatch) {
+    if (!numberMatch) {
       console.error('Raw response:', text);
-      throw new Error('Could not parse AI response as JSON');
+      throw new Error('Could not parse score from AI response');
     }
-
-    return JSON.parse(jsonMatch[0]);
+    
+    const score = parseInt(numberMatch[1], 10);
+    
+    // Return in expected format
+    return {
+      overall: score,
+      suggestions: [text.slice(0, 100)] // First 100 chars as suggestion
+    };
   }
 
   async compareVariants(variants) {
