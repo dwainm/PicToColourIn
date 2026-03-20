@@ -87,11 +87,6 @@ class WasmProcessor {
             this.freeFn = (ptr) => this.module._free(ptr);
             this.estimateFn = (w, h) => this.module._z3(w, h);
             
-                process: !!this.processFn,
-                free: !!this.freeFn,
-                estimate: !!this.estimateFn
-            });
-            
             this.isReady = true;
             
         } catch (err) {
@@ -166,12 +161,6 @@ class WasmProcessor {
             const meth = Number(method);
             const minVal = Number(outputMin);
             const maxVal = Number(outputMax);
-            
-                width, height, 
-                windowSize: ws, c: cVal, method: meth,
-                outputMin: minVal, outputMax: maxVal,
-                outputMinType: typeof minVal, outputMaxType: typeof maxVal
-            });
             
             const outputPtr = this.processFn(
                 inputPtr,
