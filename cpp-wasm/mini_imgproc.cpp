@@ -399,13 +399,10 @@ Image processToColoringPage(
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
     
-    // Step 2.5: Non-maximum suppression (thin edges for cleaner lines)
-    dog = nonMaxSuppress(dog);
-    
-    // Step 2.6: Hysteresis thresholding (Canny-style edge cleanup)
+    // Step 2.5: Hysteresis thresholding (Canny-style edge cleanup)
     // Keeps strong edges and connects through weak regions
-    uint8_t lowThresh = static_cast<uint8_t>(edgeIntensity * 15);  // e.g., 6*15 = 90
-    uint8_t highThresh = static_cast<uint8_t>(edgeIntensity * 25); // e.g., 6*25 = 150
+    uint8_t lowThresh = static_cast<uint8_t>(edgeIntensity * 12);  // Lower threshold
+    uint8_t highThresh = static_cast<uint8_t>(edgeIntensity * 22); // Higher threshold
     dog = hysteresisThreshold(dog, lowThresh, highThresh);
     
     // Debug: return raw DoG if requested
