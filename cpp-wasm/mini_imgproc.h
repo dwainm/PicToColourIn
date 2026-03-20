@@ -58,6 +58,9 @@ Image morphologicalClose(const Image& src, int radius);
 // Bilateral filter (edge-preserving smoothing)
 Image bilateralFilter(const Image& src, float spatialSigma, float intensitySigma);
 
+// Non-maximum suppression for edge thinning
+Image nonMaxSuppress(const Image& src);
+
 // Contrast stretching
 Image stretchContrast(const Image& src, float lowPercentile, float highPercentile);
 

@@ -47,22 +47,20 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants - testing bilateral filter for cleaner edges
+// Parameter variants - test NMS for cleaner edges
 const VARIANTS = [
-  // Baseline 7/10 winner without bilateral
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'base' },
+  // Baseline 7/10 winner (NMS now always applied)
+  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'nms-base' },
   
-  // With bilateral filtering (spatial=2, intensity=30)
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2, bilateralIntensity: 30, label: 'bil-2-30' },
-  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2, bilateralIntensity: 25, label: 'bil-2-25' },
+  // Slightly stronger intensity to compensate for NMS thinning
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'nms-strong' },
+  { blurRadius: 7.5, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 0, label: 'nms-heavy' },
   
-  // Stronger bilateral (more smoothing)
-  { blurRadius: 7, edgeIntensity: 6.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 3, bilateralIntensity: 40, label: 'bil-3-40' },
-  { blurRadius: 6.5, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2.5, bilateralIntensity: 35, label: 'bil-2.5-35' },
+  // With light bilateral + NMS
+  { blurRadius: 7, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 1, bilateralIntensity: 20, label: 'nms-bil' },
   
-  // Light bilateral (subtle smoothing)
-  { blurRadius: 7, edgeIntensity: 5.5, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 1.5, bilateralIntensity: 20, label: 'bil-1.5-20' },
-  { blurRadius: 8, edgeIntensity: 6, sigmaRatio: 1.5, closeRadius: 0, bilateralSpatial: 2, bilateralIntensity: 30, label: 'bil-8-6' },
+  // Tighter DoG + NMS
+  { blurRadius: 6.5, edgeIntensity: 6, sigmaRatio: 1.3, closeRadius: 0, bilateralSpatial: 0, label: 'nms-tight' },
 ];
 
 async function compileNative() {

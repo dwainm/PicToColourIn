@@ -248,6 +248,43 @@ Image stretchContrast(const Image& src, float lowPercentile, float highPercentil
     return result;
 }
 
+// Non-maximum suppression for edge thinning (Canny-style)
+Image nonMaxSuppress(const Image& src) {
+    Image result(src.width, src.height);
+    
+    for (int y = 1; y < src.height - 1; ++y) {
+        for (int x = 1; x < src.width - 1; ++x) {
+            uint8_t center = src.at(x, y);
+            
+            // Simple 4-direction NMS: check if center is max in any direction
+            uint8_t n = src.at(x, y-1);
+            uint8_t s = src.at(x, y+1);
+            uint8_t e = src.at(x+1, y);
+            uint8_t w = src.at(x-1, y);
+            
+            // Keep only if it's a local maximum
+            if (center >= n && center >= s && center >= e && center >= w) {
+                result.at(x, y) = center;
+            } else {
+                // Suppress - reduce intensity
+                result.at(x, y) = center / 4;
+            }
+        }
+    }
+    
+    // Copy borders
+    for (int x = 0; x < src.width; ++x) {
+        result.at(x, 0) = src.at(x, 0);
+        result.at(x, src.height - 1) = src.at(x, src.height - 1);
+    }
+    for (int y = 0; y < src.height; ++y) {
+        result.at(0, y) = src.at(0, y);
+        result.at(src.width - 1, y) = src.at(src.width - 1, y);
+    }
+    
+    return result;
+}
+
 Image processToColoringPage(
     const uint8_t* rgbaIn,
     int width,
@@ -274,6 +311,9 @@ Image processToColoringPage(
     float sigmaSmall = blurSigma / sigmaRatio;
     float sigmaLarge = blurSigma;
     Image dog = differenceOfGaussians(gray, sigmaSmall, sigmaLarge, edgeIntensity);
+    
+    // Step 2.5: Non-maximum suppression (thin edges for cleaner lines)
+    dog = nonMaxSuppress(dog);
     
     // Debug: return raw DoG if requested
     if (debugDogOut) {
