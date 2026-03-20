@@ -1,16 +1,17 @@
 /**
  * PicToColourIn - One-Click Photo to Coloring Page
- * No sliders. No settings. Just perfect results.
+ * Lazily loads C++ WASM on first use, shows loading state
  */
 
 class ColoringApp {
     constructor() {
         this.sourceImage = null;
         this.processor = null;
-        this.isProcessing = false;
+        this.wasmLoading = false;
+        this.wasmReady = false;
+        this.pendingImage = null;
         
         // Tuned parameters (from 19 iterations of testing)
-        // Target: 7/10 quality for coloring pages
         this.processingParams = {
             blurRadius: 3.6,
             edgeIntensity: 1.42,
@@ -23,108 +24,93 @@ class ColoringApp {
         this.init();
     }
 
-    async init() {
+    init() {
         this.cacheElements();
         this.bindEvents();
-        await this.initProcessor();
+        // Don't load WASM yet - wait for first image
+        console.log('App ready. Drop a photo to start.');
     }
 
     cacheElements() {
-        // Sections
         this.uploadSection = document.getElementById('uploadSection');
         this.editorSection = document.getElementById('editorSection');
-        
-        // Upload
         this.dropZone = document.getElementById('dropZone');
         this.fileInput = document.getElementById('fileInput');
-        
-        // Canvas
         this.sourceCanvas = document.getElementById('sourceCanvas');
         this.outputCanvas = document.getElementById('outputCanvas');
         this.loadingOverlay = document.getElementById('loadingOverlay');
-        this.processingStatus = document.querySelector('#loadingOverlay p');
-        
-        // Buttons
+        this.loadingText = this.loadingOverlay?.querySelector('p');
         this.newImageBtn = document.getElementById('newImageBtn');
         this.downloadBtn = document.getElementById('downloadBtn');
         this.printBtn = document.getElementById('printBtn');
-        
-        // Status
         this.statusDiv = document.getElementById('status');
     }
 
     bindEvents() {
-        // Upload
-        this.dropZone.addEventListener('click', () => this.fileInput.click());
-        this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        this.dropZone?.addEventListener('click', () => this.fileInput?.click());
+        this.fileInput?.addEventListener('change', (e) => this.handleFileSelect(e));
         
-        // Drag & drop
-        this.dropZone.addEventListener('dragover', (e) => {
+        this.dropZone?.addEventListener('dragover', (e) => {
             e.preventDefault();
             this.dropZone.classList.add('dragover');
         });
         
-        this.dropZone.addEventListener('dragleave', () => {
+        this.dropZone?.addEventListener('dragleave', () => {
             this.dropZone.classList.remove('dragover');
         });
         
-        this.dropZone.addEventListener('drop', (e) => {
+        this.dropZone?.addEventListener('drop', (e) => {
             e.preventDefault();
             this.dropZone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file?.type.startsWith('image/')) {
+            const file = e.dataTransfer?.files?.[0];
+            if (file?.type?.startsWith('image/')) {
                 this.loadImage(file);
             }
         });
         
-        // Actions
         this.newImageBtn?.addEventListener('click', () => this.reset());
         this.downloadBtn?.addEventListener('click', () => this.download());
         this.printBtn?.addEventListener('click', () => this.print());
     }
 
-    async initProcessor() {
-        try {
-            // Try WASM first (higher quality)
-            const { WasmProcessor } = await import('./wasm-processor.js');
-            this.processor = new WasmProcessor();
-            await this.processor.init();
-            
-            if (!this.processor.fallbackMode) {
-                console.log('✓ High-performance mode active');
-            }
-        } catch (err) {
-            // Fallback to WebGL
-            console.log('Using standard processing');
-            const { WebGLProcessor } = await import('./webgl-processor.js');
-            this.processor = new WebGLProcessor();
-            await this.processor.init();
-        }
-    }
-
     handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (file?.type.startsWith('image/')) {
+        const file = e.target?.files?.[0];
+        if (file?.type?.startsWith('image/')) {
             this.loadImage(file);
         }
     }
 
     async loadImage(file) {
         try {
-            // Load image
+            // Show loading immediately
+            this.showEditorLoading();
+            
+            // Load image preview
             this.sourceImage = await this.createImageBitmap(file);
             this.displaySourceImage();
             
-            // Switch to editor
+            // Show editor with loading state
             this.uploadSection.style.display = 'none';
             this.editorSection.style.display = 'flex';
             
-            // Auto-process
+            // Lazy load WASM if not already loading/ready
+            if (!this.processor && !this.wasmLoading) {
+                await this.initProcessor();
+            }
+            
+            // If still loading WASM, wait
+            if (this.wasmLoading) {
+                this.updateLoadingText('Loading high-performance engine...');
+                await this.waitForWasm();
+            }
+            
+            // Now process
             await this.process();
             
         } catch (err) {
             console.error('Error:', err);
-            this.showStatus('Error loading image. Try another photo.', 'error');
+            this.showStatus('Something went wrong. Try another photo.', 'error');
+            this.hideLoading();
         }
     }
 
@@ -132,12 +118,14 @@ class ColoringApp {
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.onload = () => resolve(img);
-            img.onerror = reject;
+            img.onerror = () => reject(new Error('Failed to load image'));
             img.src = URL.createObjectURL(file);
         });
     }
 
     displaySourceImage() {
+        if (!this.sourceImage) return;
+        
         this.sourceCanvas.width = this.sourceImage.width;
         this.sourceCanvas.height = this.sourceImage.height;
         const ctx = this.sourceCanvas.getContext('2d');
@@ -147,12 +135,59 @@ class ColoringApp {
         this.outputCanvas.height = this.sourceImage.height;
     }
 
-    async process() {
-        if (!this.processor || !this.sourceImage) return;
+    async initProcessor() {
+        this.wasmLoading = true;
+        this.updateLoadingText('Preparing processor...');
         
-        this.isProcessing = true;
-        this.loadingOverlay.style.display = 'flex';
-        this.processingStatus.textContent = 'Creating coloring page...';
+        try {
+            // Try WASM first
+            const { WasmProcessor } = await import('./wasm-processor.js');
+            this.processor = new WasmProcessor();
+            await this.processor.init();
+            
+            if (!this.processor.fallbackMode) {
+                this.wasmReady = true;
+                console.log('✓ WASM ready');
+            } else {
+                console.log('Using WebGL fallback');
+            }
+        } catch (err) {
+            console.warn('WASM failed, using WebGL:', err.message);
+            
+            // Fallback to WebGL
+            try {
+                const { WebGLProcessor } = await import('./webgl-processor.js');
+                this.processor = new WebGLProcessor();
+                await this.processor.init();
+            } catch (webglErr) {
+                console.error('WebGL also failed:', webglErr);
+                throw new Error('Your browser does not support image processing');
+            }
+        } finally {
+            this.wasmLoading = false;
+        }
+    }
+
+    waitForWasm() {
+        return new Promise((resolve) => {
+            const check = () => {
+                if (!this.wasmLoading) {
+                    resolve();
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
+    }
+
+    async process() {
+        if (!this.processor || !this.sourceImage) {
+            this.showStatus('Processor not ready', 'error');
+            return;
+        }
+        
+        this.updateLoadingText('Creating coloring page...');
         this.downloadBtn.disabled = true;
         
         try {
@@ -171,14 +206,34 @@ class ColoringApp {
             const outCtx = this.outputCanvas.getContext('2d');
             outCtx.putImageData(result, 0, 0);
             
-            this.showStatus(`Ready in ${(processTime/1000).toFixed(1)}s`, 'success');
+            this.hideLoading();
+            
+            const mode = this.wasmReady ? 'High-performance' : 'Standard';
+            this.showStatus(`${mode} mode • Ready in ${(processTime/1000).toFixed(1)}s`, 'success');
             this.downloadBtn.disabled = false;
             
         } catch (err) {
             console.error('Processing error:', err);
+            this.hideLoading();
             this.showStatus('Processing failed. Try a different photo.', 'error');
-        } finally {
-            this.isProcessing = false;
+        }
+    }
+
+    showEditorLoading() {
+        if (this.loadingOverlay) {
+            this.loadingOverlay.style.display = 'flex';
+        }
+        this.updateLoadingText('Loading...');
+    }
+
+    updateLoadingText(text) {
+        if (this.loadingText) {
+            this.loadingText.textContent = text;
+        }
+    }
+
+    hideLoading() {
+        if (this.loadingOverlay) {
             this.loadingOverlay.style.display = 'none';
         }
     }
@@ -227,6 +282,7 @@ class ColoringApp {
         this.sourceImage = null;
         this.fileInput.value = '';
         this.statusDiv.style.display = 'none';
+        this.hideLoading();
         this.downloadBtn.disabled = false;
     }
 }
