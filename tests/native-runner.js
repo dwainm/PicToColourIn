@@ -47,13 +47,25 @@ async function convertPPMtoPNG(inputPath, outputPath) {
   });
 }
 
-// Parameter variants to test
+// Parameter variants - wider range for experimentation
 const VARIANTS = [
-  { blurRadius: 3.2, edgeIntensity: 1.35, sigmaRatio: 3.2, closeRadius: 1, label: 'tuned-a' },
-  { blurRadius: 3.5, edgeIntensity: 1.4, sigmaRatio: 3.5, closeRadius: 1, label: 'tuned-b' },
-  { blurRadius: 3.8, edgeIntensity: 1.45, sigmaRatio: 3.8, closeRadius: 1, label: 'tuned-c' },
-  { blurRadius: 3.3, edgeIntensity: 1.38, sigmaRatio: 3.3, closeRadius: 1, label: 'tuned-d' },
-  { blurRadius: 3.6, edgeIntensity: 1.42, sigmaRatio: 3.6, closeRadius: 1, label: 'tuned-e' },
+  // Light blur, low intensity
+  { blurRadius: 2.0, edgeIntensity: 0.8, sigmaRatio: 2.0, closeRadius: 0, label: 'light-soft' },
+  { blurRadius: 2.5, edgeIntensity: 1.0, sigmaRatio: 2.5, closeRadius: 0, label: 'light-med' },
+  
+  // Medium range (around baseline)
+  { blurRadius: 3.0, edgeIntensity: 1.2, sigmaRatio: 3.0, closeRadius: 1, label: 'med-soft' },
+  { blurRadius: 3.5, edgeIntensity: 1.5, sigmaRatio: 3.5, closeRadius: 1, label: 'med-med' },
+  { blurRadius: 4.0, edgeIntensity: 1.8, sigmaRatio: 4.0, closeRadius: 1, label: 'med-heavy' },
+  
+  // Heavy blur, high intensity
+  { blurRadius: 5.0, edgeIntensity: 2.0, sigmaRatio: 5.0, closeRadius: 2, label: 'heavy-soft' },
+  { blurRadius: 6.0, edgeIntensity: 2.5, sigmaRatio: 6.0, closeRadius: 2, label: 'heavy-med' },
+  { blurRadius: 7.0, edgeIntensity: 3.0, sigmaRatio: 7.0, closeRadius: 2, label: 'heavy-strong' },
+  
+  // Extreme (for testing limits)
+  { blurRadius: 1.0, edgeIntensity: 0.5, sigmaRatio: 1.5, closeRadius: 0, label: 'extreme-light' },
+  { blurRadius: 10.0, edgeIntensity: 5.0, sigmaRatio: 10.0, closeRadius: 3, label: 'extreme-heavy' },
 ];
 
 async function compileNative() {
@@ -196,10 +208,22 @@ async function main() {
     console.log('\n🏆 Winner (encode these params):');
     console.log(JSON.stringify(winner.params, null, 2));
     
-    // Save report
-    const reportPath = join(OUTPUT_DIR, 'native-report.json');
-    await writeFile(reportPath, JSON.stringify({ winner: winner.params, all: results }, null, 2));
+    // Save report with timestamp for comparison
+    const reportPath = join(OUTPUT_DIR, `native-report-${Date.now()}.json`);
+    await writeFile(reportPath, JSON.stringify({ 
+      timestamp: new Date().toISOString(),
+      winner: winner.params, 
+      all: results 
+    }, null, 2));
     console.log(`\n💾 Report saved to ${reportPath}`);
+    
+    // Also save as latest
+    const latestPath = join(OUTPUT_DIR, 'native-report-latest.json');
+    await writeFile(latestPath, JSON.stringify({ 
+      timestamp: new Date().toISOString(),
+      winner: winner.params, 
+      all: results 
+    }, null, 2));
   }
   
   // Cleanup
