@@ -20,12 +20,32 @@ class WasmProcessor {
             const wasmModule = await import('./imgproc-wasm.js');
             const ModuleFactory = wasmModule.default;
             
-            // Initialize the module (this loads and instantiates the WASM)
-            this.module = await ModuleFactory();
+            // Create module instance with callbacks
+            const moduleInstance = await ModuleFactory({
+                onRuntimeInitialized: () => {
+                    console.log('WASM runtime initialized');
+                }
+            });
             
-            // Wait a tick for HEAP to be set up
-            if (!this.module.HEAP8) {
-                await new Promise(r => setTimeout(r, 0));
+            this.module = moduleInstance;
+            
+            // Wait for runtime to be fully ready
+            if (!this.module.calledRun) {
+                await new Promise(resolve => {
+                    const check = () => {
+                        if (this.module.calledRun && this.module.HEAPU8) {
+                            resolve();
+                        } else {
+                            setTimeout(check, 10);
+                        }
+                    };
+                    check();
+                });
+            }
+            
+            // Verify HEAP is available
+            if (!this.module.HEAPU8) {
+                throw new Error('WASM HEAP not initialized');
             }
             
             // Wrap C functions for easy calling
@@ -38,16 +58,12 @@ class WasmProcessor {
             
             this.isReady = true;
             console.log('✓ WASM processor initialized');
-            
-            // Log estimated memory
-            if (this.module.HEAP8) {
-                console.log(`WASM memory: ${this.module.HEAP8.length / 1024 / 1024}MB initial`);
-            }
+            console.log(`WASM memory: ${this.module.HEAPU8.length / 1024 / 1024}MB`);
             
         } catch (err) {
-            console.warn('WASM load failed:', err);
+            console.error('WASM load failed:', err);
             this.fallbackMode = true;
-            this.isReady = false;  // Not ready if WASM failed
+            this.isReady = false;
         }
     }
 
